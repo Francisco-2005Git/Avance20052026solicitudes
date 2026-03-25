@@ -11,6 +11,11 @@
     <div class="login-contenedor">
         <div class="login-tarjeta">
 
+            <?php 
+                include "php/conexion.php";
+                include "php/controlador_login.php";
+            ?>
+
             <div class="login-logo">
                 <div class="marca-emblema"><img src="img/logo_tec_.png" alt="logo del Instituto Tecnológico Superior de Rioverde" width="48"></div>
                 <div>
@@ -22,7 +27,7 @@
             <div class="login-titulo">Bienvenido</div>
             <div class="login-subtitulo">Ingresa tus credenciales para acceder al sistema.</div>
 
-            <form action="#" method="post">
+            <form action="" method="post">
 
                 <div class="grupo-form">
                     <label class="etiqueta-form" for="username">Usuario</label>
@@ -39,7 +44,7 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn-iniciar-sesion">Iniciar Sesión</button>
+                <input type="submit" class="btn-iniciar-sesion" name="btn-iniciar-sesion" value="Iniciar Sesión">
             </form>
 
         </div>
