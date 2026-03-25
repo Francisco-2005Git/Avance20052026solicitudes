@@ -1,3 +1,8 @@
+<?php
+session_start();
+
+?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -20,7 +25,11 @@
             <div class="usuario-pastilla">
                 <div class="usuario-avatar" style="background-color:#3d6bbf;">AD</div>
                 <div>
-                    <div class="usuario-nombre">Administrador</div>
+                    <div class="usuario-nombre">
+                        <?php 
+                            echo $_SESSION["nombre"]. " " .$_SESSION["apellidoP"];
+                        ?>
+                    </div>
                     <div class="usuario-rol">Control total</div>
                 </div>
             </div>
