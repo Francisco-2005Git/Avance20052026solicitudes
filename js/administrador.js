@@ -35,15 +35,6 @@ document.getElementById('userModal').addEventListener('click', function(e) {
     if (e.target === this) closeModal();
 });
 
-document.getElementById('userForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    var name = document.getElementById('user-name').value;
-    var role = document.getElementById('user-role').value;
-    alert('Usuario ' + name + ' (' + role + ') guardado.');
-    closeModal();
-    // Aquí podrías recargar la lista de usuarios
-});
-
 function deleteUser(name) {
     if (confirm('¿Eliminar a ' + name + '?')) {
         alert(name + ' eliminado.');

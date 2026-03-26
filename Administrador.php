@@ -1,11 +1,19 @@
+<!-- PHP -->
+<!-- Comprobración de sesión -->
 <?php
 session_start();
 if (empty($_SESSION["id"]) || !is_numeric($_SESSION["id"])) {
     header("location: login.php");
     exit();
 }
+
+$msgExito = $_SESSION["exito"] ?? null;
+$msgError = $_SESSION["error"] ?? null;
+$seccionActiva = $_SESSION["seccion_activa"] ?? null;
+unset($_SESSION["exito"], $_SESSION["error"], $_SESSION["seccion_activa"]);
 ?>
 
+<!-- HTML -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -68,6 +76,13 @@ if (empty($_SESSION["id"]) || !is_numeric($_SESSION["id"])) {
         </header>
 
         <div class="cuerpo-pagina">
+            <?php if ($msgExito): ?>
+                <div class="alerta alerta-exito"><?= htmlspecialchars($msgExito) ?></div>
+            <?php endif; ?>
+
+            <?php if ($msgError): ?>
+                <div class="alerta alerta-error"><?= htmlspecialchars($msgError) ?></div>
+            <?php endif; ?>
 
             <div id="bitacora" class="section active">
                 <div class="tarjeta">
@@ -294,8 +309,8 @@ if (empty($_SESSION["id"]) || !is_numeric($_SESSION["id"])) {
 
                 <!-- Username -->
                 <div class="grupo-form">
-                    <label class="etiqueta-form" for="user-username">Usuario</label>
-                    <input class="campo-form" type="text" id="user-username"
+                    <label class="etiqueta-form" for="user-name">Usuario/Username</label>
+                    <input class="campo-form" type="text" id="user-name"
                         name="username" maxlength="50" required>
                 </div>
 
@@ -315,8 +330,8 @@ if (empty($_SESSION["id"]) || !is_numeric($_SESSION["id"])) {
 
                 <!-- Rol -->
                 <div class="grupo-form">
-                    <label class="etiqueta-form" for="user-rol">Rol</label>
-                    <select class="campo-form" id="user-rol" name="id_rol" required>
+                    <label class="etiqueta-form" for="user-role">Rol</label>
+                    <select class="campo-form" id="user-role" name="id_rol" required>
                         <option value="" disabled selected>Seleccionar...</option>
                         <option value="1">Usuario</option>
                         <option value="2">Trabajador</option>
@@ -349,11 +364,16 @@ if (empty($_SESSION["id"]) || !is_numeric($_SESSION["id"])) {
                     <button type="button" class="btn btn-fantasma" onclick="closeModal()">Cancelar</button>
                 </div>
             </form>
-
         </div>
     </div>
 
     <script src="js/comun.js"></script>
     <script src="js/administrador.js"></script>
+
+    <?php if ($seccionActiva): ?>
+    <script>
+        navegarSeccion("<?= htmlspecialchars($seccionActiva) ?>", titulosSecciones);
+    </script>
+    <?php endif; ?>
 </body>
 </html>

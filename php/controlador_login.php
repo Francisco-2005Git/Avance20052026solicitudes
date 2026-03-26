@@ -21,15 +21,15 @@ if (!empty($_POST["btn-iniciar-sesion"])) {
 
                 $_SESSION["id"]        =$datos->id_us;
                 $_SESSION["nombre"]    =$datos->nombre;
-                $_SESSION["app"] =$datos->app;
+                $_SESSION["app"]       =$datos->app;
 
                 header("location: Administrador.php");
                 exit();
             } else {
-                echo "<div>Usuario o contraseña incorrectos</div>";
+                echo "<div class='alerta alerta-error'>Usuario o contraseña incorrectos</div>";
             }
         } else {
-            echo "<div>Usuario o contraseña incorrectos</div>";
+            echo "<div class='alerta alerta-error'>Usuario o contraseña incorrectos</div>";
         }
 
         $statement->close();
