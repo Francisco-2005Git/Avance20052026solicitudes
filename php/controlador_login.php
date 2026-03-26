@@ -2,23 +2,40 @@
 session_start();
 if (!empty($_POST["btn-iniciar-sesion"])) {
     if (!empty($_POST["username"]) and !empty($_POST["password"])) {
-        $usuario = $_POST["username"];
-        $password = $_POST["password"];
-        $sql = $conexion->query("SELECT * FROM usuario WHERE username='$usuario' and contrasena='$password'");
         
-        if ($datos=$sql->fetch_object()) {
-            $_SESSION["id"]=$datos->id_us;
-            $_SESSION["nombre"]=$datos->nombre;
-            $_SESSION["apellidoP"]=$datos->apellidoP;
-            header("location: Administrador.php");
+        // Definición de variables con consulta a la BD
+        $usuario = trim($_POST["username"]);
+        $password = trim($_POST["password"]);
+
+        // Consulta con sentencia pre-hecha
+        $statement = $conexion->prepare("SELECT id_us, nombre, app, contrasena FROM usuario WHERE username= ?");
+        $statement->bind_param("s", $usuario);
+        $statement->execute();
+        $resultado = $statement->get_result();
+
+        if ($datos = $resultado->fetch_object()) {
+
+            // Verificación del hash para regenerar la ID de la sesión
+            if (password_verify($password, $datos->contrasena)) {
+                session_regenerate_id(true);
+
+                $_SESSION["id"]        =$datos->id_us;
+                $_SESSION["nombre"]    =$datos->nombre;
+                $_SESSION["app"] =$datos->app;
+
+                header("location: Administrador.php");
+                exit();
+            } else {
+                echo "<div>Usuario o contraseña incorrectos</div>";
+            }
         } else {
-            echo "<div>Acceso denegado</div>";
+            echo "<div>Usuario o contraseña incorrectos</div>";
         }
 
+        $statement->close();
+
     } else {
-        echo "Campos vacíos";
+        echo "<div>Campos vacíos</div>";
     }
-
 }
-
 ?>
