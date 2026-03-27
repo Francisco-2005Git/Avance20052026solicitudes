@@ -1,16 +1,32 @@
 <!-- PHP -->
-<!-- Comprobración de sesión -->
 <?php
+// Comprobación de sesión
 session_start();
-if (empty($_SESSION["id"]) || !is_numeric($_SESSION["id"])) {
-    header("location: login.php");
+if (empty($_SESSION["id"]) || !is_numeric($_SESSION["id"]) || $_SESSION["id_rol"] != 3) {
+    header("location: index.php");
     exit();
 }
-
 $msgExito = $_SESSION["exito"] ?? null;
 $msgError = $_SESSION["error"] ?? null;
 $seccionActiva = $_SESSION["seccion_activa"] ?? null;
 unset($_SESSION["exito"], $_SESSION["error"], $_SESSION["seccion_activa"]);
+
+require_once "php/conexion.php";
+
+// Consulta de usuarios (excluyendo al admin loggeado y al rol 3 (los admins))
+$stmtUsuarios = $conexion->prepare(
+    "SELECT u.id_us, u.nombre, u.app, u.apm, u.username, u.contrasena, u.disponible,
+            r.nombre AS rol, a.nombre AS area
+     FROM usuario u
+     JOIN rol r ON u.id_rol = r.id_rol
+     JOIN area a ON u.id_area = a.id_area
+     WHERE u.id_us != ? AND u.id_rol != 3
+     ORDER BY u.nombre ASC"
+);
+$stmtUsuarios->bind_param("i", $_SESSION["id"]);
+$stmtUsuarios->execute();
+$usuarios = $stmtUsuarios->get_result();
+$stmtUsuarios->close();
 ?>
 
 <!-- HTML -->
@@ -76,6 +92,7 @@ unset($_SESSION["exito"], $_SESSION["error"], $_SESSION["seccion_activa"]);
         </header>
 
         <div class="cuerpo-pagina">
+            <!-- Mensajes que pueden aparecer en la parte superior después de la creación de un nuevo usuario -->
             <?php if ($msgExito): ?>
                 <div class="alerta alerta-exito"><?= htmlspecialchars($msgExito) ?></div>
             <?php endif; ?>
@@ -113,7 +130,7 @@ unset($_SESSION["exito"], $_SESSION["error"], $_SESSION["seccion_activa"]);
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Usuario</th>
+                                    <th>Solicitante</th>
                                     <th>Trabajador Asignado</th>
                                     <th>Estado</th>
                                     <th>Fecha</th>
@@ -198,13 +215,12 @@ unset($_SESSION["exito"], $_SESSION["error"], $_SESSION["seccion_activa"]);
 
                     <div class="barra-herramientas">
                         <div class="campo-busqueda">
-                            <input class="campo-form" type="text" placeholder="Buscar usuario...">
+                            <input class="campo-form" type="text" id="buscar-usuario" placeholder="Buscar usuario...">
                         </div>
-                        <select class="campo-form" style="width:auto; min-width:140px;">
+                        <select class="campo-form" id="filtro-rol" style="width:auto; min-width:140px;">
                             <option value="">Todos los roles</option>
-                            <option>Administrador</option>
-                            <option>Trabajador</option>
-                            <option>Usuario</option>
+                            <option value="trabajador">Trabajador</option>
+                            <option value="solicitante">Solicitante</option>
                         </select>
                     </div>
 
@@ -213,57 +229,59 @@ unset($_SESSION["exito"], $_SESSION["error"], $_SESSION["seccion_activa"]);
                             <thead>
                                 <tr>
                                     <th>Nombre</th>
+                                    <th>Usuario</th>
+                                    <th>Área</th>
                                     <th>Rol</th>
+                                    <th>Disponible</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <!-- Datos de ejemplo -->
+                            <tbody id="tabla-usuarios">
+                            <?php if ($usuarios->num_rows === 0): ?>
                                 <tr>
-                                    <td>
-                                        <div class="flex items-center gap-2">
-                                            <div class="avatar-fila-tabla">JP</div>
-                                            <strong>Juan Pérez</strong>
-                                        </div>
-                                    </td>
-                                    <td><span class="etiqueta etiqueta-pendiente">Usuario</span></td>
-                                    <td>
-                                        <div class="acciones-tabla">
-                                            <button class="btn btn-advertencia btn-pequeno edit" onclick="openModal('edit', 'Juan Pérez', 'usuario')">Editar</button>
-                                            <button class="btn btn-peligro btn-pequeno delete" onclick="deleteUser('Juan Pérez')">Eliminar</button>
-                                        </div>
+                                    <td colspan="6" style="text-align:center; color:#8f98b2;">
+                                        No hay usuarios registrados.
                                     </td>
                                 </tr>
-                                <tr>
-                                    <td>
-                                        <div class="flex items-center gap-2">
-                                            <div class="avatar-fila-tabla">CL</div>
-                                            <strong>Carlos López</strong>
-                                        </div>
-                                    </td>
-                                    <td><span class="etiqueta etiqueta-proceso">Trabajador</span></td>
-                                    <td>
-                                        <div class="acciones-tabla">
-                                            <button class="btn btn-advertencia btn-pequeno edit" onclick="openModal('edit', 'Carlos López', 'trabajador')">Editar</button>
-                                            <button class="btn btn-peligro btn-pequeno delete" onclick="deleteUser('Carlos López')">Eliminar</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <div class="flex items-center gap-2">
-                                            <div class="avatar-fila-tabla">MG</div>
-                                            <strong>María García</strong>
-                                        </div>
-                                    </td>
-                                    <td><span class="etiqueta etiqueta-pendiente">Usuario</span></td>
-                                    <td>
-                                        <div class="acciones-tabla">
-                                            <button class="btn btn-advertencia btn-pequeno edit" onclick="openModal('edit', 'María García', 'usuario')">Editar</button>
-                                            <button class="btn btn-peligro btn-pequeno delete" onclick="deleteUser('María García')">Eliminar</button>
-                                        </div>
-                                    </td>
-                                </tr>
+                            <?php else: ?>
+                                <?php while ($u = $usuarios->fetch_object()): ?>
+                                    <?php
+                                        $iniciales = strtoupper(substr($u->nombre, 0, 1) . substr($u->app, 0, 1));
+                                        $nombreCompleto = htmlspecialchars($u->nombre . " " . $u->app . ($u->apm ? " " . $u->apm : ""));
+                                        $claseRol = $u->rol === "Trabajador" ? "etiqueta-proceso" : "etiqueta-pendiente";
+                                    ?>
+                                    <tr>
+                                        <td>
+                                            <div class="flex items-center gap-2">
+                                                <div class="avatar-fila-tabla"><?= $iniciales ?></div>
+                                                <strong><?= $nombreCompleto ?></strong>
+                                            </div>
+                                        </td>
+                                        <td class="texto-apagado"><?= htmlspecialchars($u->username) ?></td>
+                                        <td class="texto-apagado"><?= htmlspecialchars($u->area) ?></td>
+                                        <td><span class="etiqueta <?= $claseRol ?>"><?= htmlspecialchars($u->rol) ?></span></td>
+                                        <td>
+                                            <?php if ($u->disponible): ?>
+                                                <span class="etiqueta etiqueta-completada">Sí</span>
+                                            <?php else: ?>
+                                                <span class="etiqueta etiqueta-cancelada">No</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <div class="acciones-tabla">
+                                                <button class="btn btn-advertencia btn-pequeno"
+                                                        onclick="openModal('edit', '<?= $nombreCompleto ?>', '<?= strtolower($u->rol) ?>')">
+                                                    Editar
+                                                </button>
+                                                <button class="btn btn-peligro btn-pequeno"
+                                                        onclick="deleteUser('<?= $nombreCompleto ?>')">
+                                                    Eliminar
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endwhile; ?>
+                            <?php endif; ?>
                             </tbody>
                         </table>
                     </div>
@@ -333,7 +351,7 @@ unset($_SESSION["exito"], $_SESSION["error"], $_SESSION["seccion_activa"]);
                     <label class="etiqueta-form" for="user-role">Rol</label>
                     <select class="campo-form" id="user-role" name="id_rol" required>
                         <option value="" disabled selected>Seleccionar...</option>
-                        <option value="1">Usuario</option>
+                        <option value="1">Solicitante</option>
                         <option value="2">Trabajador</option>
                     </select>
                 </div>

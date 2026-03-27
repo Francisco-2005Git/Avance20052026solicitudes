@@ -1,3 +1,18 @@
+<!-- PHP -->
+<!-- Comprobación de sesión -->
+
+<?php
+session_start();
+if (empty($_SESSION["id"]) || !is_numeric($_SESSION["id"]) || $_SESSION["id_rol"] != 1) {
+    header("Location: index.php");
+    exit();
+}
+$msgExito = $_SESSION["exito"] ?? null;
+$msgError = $_SESSION["error"] ?? null;
+unset($_SESSION["exito"], $_SESSION["error"]);
+?>
+
+<!-- HTML -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -18,9 +33,13 @@
                 </div>
             </div>
             <div class="usuario-pastilla">
-                <div class="usuario-avatar">JM</div>
+                <div class="usuario-avatar">
+                    <?php echo strtoupper(substr($_SESSION["nombre"], 0, 1) . substr($_SESSION["app"], 0, 1)); ?>
+                </div>
                 <div>
-                    <div class="usuario-nombre">Julian Morales</div>
+                    <div class="usuario-nombre">
+                        <?php echo htmlspecialchars($_SESSION["nombre"] . " " . $_SESSION["app"]); ?>
+                    </div>
                     <div class="usuario-rol">Solicitante</div>
                 </div>
             </div>
@@ -38,8 +57,8 @@
         </nav>
 
         <div class="sidebar-pie">
-            <a href="InicioSesion.html" class="btn-cerrar-sesion" onclick="cerrarSesion()">
-                <span>❌</span> Cerrar sesión
+            <a href="php/controlador_cerrar.php" class="btn-cerrar-sesion">
+                <span>❌</span> Cerrar Sesión
             </a>
         </div>
     </aside>
@@ -54,6 +73,12 @@
         </header>
 
         <div class="cuerpo-pagina">
+            <?php if ($msgExito): ?>
+                <div class="alerta alerta-exito"><?= htmlspecialchars($msgExito) ?></div>
+            <?php endif; ?>
+            <?php if ($msgError): ?>
+                <div class="alerta alerta-error"><?= htmlspecialchars($msgError) ?></div>
+            <?php endif; ?>
 
             <div id="crear" class="section active">
                 <div class="tarjeta" style="max-width: 680px;">

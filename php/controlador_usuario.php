@@ -77,6 +77,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && !empty($_POST["accion"])) {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
         );
         $statement->bind_param(
+            // 5 "s" y 3 "i" para indicar que se tratan de 5 strings y 3 int.
             "sssssiii",
             $nombre, $app, $apm, $username,
             $hash, $id_rol, $disponible, $id_area

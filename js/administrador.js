@@ -41,3 +41,34 @@ function deleteUser(name) {
         // Aquí podrías remover el item de la lista
     }
 }
+
+// Filtrado de tabla de usuarios
+(function () {
+    var inputBuscar = document.getElementById("buscar-usuario");
+    var selectRol   = document.getElementById("filtro-rol");
+
+    if (!inputBuscar || !selectRol) return;
+
+    function filtrar() {
+        var texto = inputBuscar.value.toLowerCase().trim();
+        var rol   = selectRol.value.toLowerCase();
+
+        document.querySelectorAll("#tabla-usuarios tr").forEach(function (fila) {
+            if (fila.querySelector("td[colspan]")) {
+                fila.style.display = "";
+                return;
+            }
+
+            var nombre   = (fila.cells[0]?.textContent || "").toLowerCase();
+            var username = (fila.cells[1]?.textContent || "").toLowerCase();
+            var rolFila  = (fila.cells[3]?.textContent || "").toLowerCase();
+
+            var coincideTexto = nombre.includes(texto) || username.includes(texto);
+            var coincideRol   = rol === "" || rolFila.includes(rol);
+
+            fila.style.display = coincideTexto && coincideRol ? "" : "none";
+        });
+    }
+    inputBuscar.addEventListener("input", filtrar);
+    selectRol.addEventListener("change", filtrar);
+})();
