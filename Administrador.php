@@ -58,7 +58,7 @@ unset($_SESSION["exito"], $_SESSION["error"], $_SESSION["seccion_activa"]);
                 Administrar Usuarios
             </a>
         </nav>
-
+        <!-- El controlador PHP hace el trabajo de cerrar sesión -->
         <div class="sidebar-pie">
             <a href="php/controlador_cerrar.php" class="btn-cerrar-sesion">
                 <span>❌</span> Cerrar Sesión
