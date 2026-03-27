@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de solicitudes — Trabajador | ITSRV</title>
+    <title>Sistema de Solicitudes — Trabajador | ITSRV</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body class="layout-app">

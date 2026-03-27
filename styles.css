@@ -930,6 +930,28 @@ tbody tr:hover {
     font-size: 11px;
 }
 
+
+.alerta {
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 12px;
+}
+
+.alerta-exito {
+    background-color: #e6f2ea;
+    color: #2e6b3e;
+    border: 1px solid #b6dfc2;
+}
+
+.alerta-error {
+    background-color: #fdecea;
+    color: #b83232;
+    border: 1px solid #f5c2c2;
+}
+
+
 .enlace-sm {
     font-size: 12px;
     color: #2b5298;

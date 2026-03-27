@@ -26,8 +26,3 @@ function inicializarNavegacion(titulosPagina) {
         });
     });
 }
-
-function cerrarSesion() {
-    alert('Sesión cerrada. Redirigiendo al login...');
-    window.location.href = 'InicioSesion.html';
-}
