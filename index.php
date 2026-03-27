@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar Sesión — ITSRV Soporte Técnico</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="pagina-login">
 
@@ -40,7 +40,7 @@
                     <label class="etiqueta-form" for="password">Contraseña</label>
                     <div class="campo-c">
                         <input class="campo-form" type="password" id="password" name="password" placeholder="••••••••" required>
-                    <!--   <button type="button" id="togglePass" class="btn-mostrar-contrasena">👁</button> En proceso de procesar calma down --> 
+                    <!-- <button type="button" id="togglePass" class="btn-mostrar-contrasena">👁</button> En proceso de procesar calma cooldown --> 
                     </div>
                 </div>
 
@@ -50,7 +50,7 @@
         </div>
 
         <div class="login-pie">
-            Sistema de Gestión de Soporte Técnico --- ITSRV © 2025
+            Sistema de Gestión de Soporte Técnico --- ITSRV © 2026
         </div>
     </div>
 

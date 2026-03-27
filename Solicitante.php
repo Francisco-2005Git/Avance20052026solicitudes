@@ -1,10 +1,43 @@
+<!-- PHP -->
+<!-- Comprobación de sesión -->
+
+<?php
+session_start();
+if (empty($_SESSION["id"]) || !is_numeric($_SESSION["id"]) || $_SESSION["id_rol"] != 1) {
+    header("Location: index.php");
+    exit();
+}
+$msgExito = $_SESSION["exito"] ?? null;
+$msgError = $_SESSION["error"] ?? null;
+unset($_SESSION["exito"], $_SESSION["error"]);
+
+require_once "php/conexion.php";
+
+$stmtSolicitudes = $conexion->prepare(
+    "SELECT s.id_sol, s.encabezado, s.prioridad, s.fecha_creacion,
+            e.nombre AS estado, a.nombre AS area
+     FROM solicitud s
+     JOIN estado_solicitud e ON s.id_estado = e.id_estado
+     JOIN usuario u ON s.id_us = u.id_us
+     JOIN area a ON u.id_area = a.id_area
+     WHERE s.id_us = ?
+     ORDER BY s.fecha_creacion DESC"
+);
+$stmtSolicitudes->bind_param("i", $_SESSION["id"]);
+$stmtSolicitudes->execute();
+$solicitudes = $stmtSolicitudes->get_result();
+$totalSolicitudes = $solicitudes->num_rows;
+$stmtSolicitudes->close();
+?>
+
+<!-- HTML -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal de Solicitudes — Usuario | ITSRV</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="layout-app">
 
@@ -18,9 +51,13 @@
                 </div>
             </div>
             <div class="usuario-pastilla">
-                <div class="usuario-avatar">JM</div>
+                <div class="usuario-avatar">
+                    <?php echo strtoupper(substr($_SESSION["nombre"], 0, 1) . substr($_SESSION["app"], 0, 1)); ?>
+                </div>
                 <div>
-                    <div class="usuario-nombre">Julian Morales</div>
+                    <div class="usuario-nombre">
+                        <?php echo htmlspecialchars($_SESSION["nombre"] . " " . $_SESSION["app"]); ?>
+                    </div>
                     <div class="usuario-rol">Solicitante</div>
                 </div>
             </div>
@@ -33,13 +70,15 @@
             </a>
             <a href="#" class="nav-link nav-item" data-section="creadas">
                 Mis Solicitudes
-                <span class="nav-contador">+45</span>
+                <?php if ($totalSolicitudes > 0): ?>
+                    <span class="nav-contador"><?= $totalSolicitudes ?></span>
+                <?php endif; ?>
             </a>
         </nav>
 
         <div class="sidebar-pie">
-            <a href="InicioSesion.html" class="btn-cerrar-sesion" onclick="cerrarSesion()">
-                <span>❌</span> Cerrar sesión
+            <a href="php/controlador_cerrar.php" class="btn-cerrar-sesion">
+                <span>❌</span> Cerrar Sesión
             </a>
         </div>
     </aside>
@@ -54,6 +93,12 @@
         </header>
 
         <div class="cuerpo-pagina">
+            <?php if ($msgExito): ?>
+                <div class="alerta alerta-exito"><?= htmlspecialchars($msgExito) ?></div>
+            <?php endif; ?>
+            <?php if ($msgError): ?>
+                <div class="alerta alerta-error"><?= htmlspecialchars($msgError) ?></div>
+            <?php endif; ?>
 
             <div id="crear" class="section active">
                 <div class="tarjeta" style="max-width: 680px;">
@@ -61,7 +106,7 @@
                             <div class="tarjeta-titulo">Nueva solicitud de soporte</div>
                         </div>
                         <div class="tarjeta-cuerpo">
-                            <form action="#" method="post">
+                            <form action="php/controlador_solicitud.php" method="POST">
 
                                 <div class="grupo-form">
                                     <label class="etiqueta-form" for="titulo">Título de la solicitud</label>
@@ -73,22 +118,19 @@
                                         <label class="etiqueta-form" for="area">Área</label>
                                         <select class="campo-form" id="area" name="area" required>
                                             <option value="">— Seleccionar —</option>
+                                            <option>Docencia</option>
                                             <option>Coordinación Académica</option>
                                             <option>Servicios Escolares</option>
                                             <option>Recursos Humanos</option>
-                                            <option>Dirección General</option>
-                                            <option>Centro de Cómputo</option>
-                                            <option>Biblioteca</option>
-                                            <option>Docencia</option>
                                         </select>
                                     </div>
                                     <div class="grupo-form">
                                         <label class="etiqueta-form" for="prioridad">Prioridad</label>
                                         <select class="campo-form" id="prioridad" name="prioridad" required>
                                             <option value="">— Seleccionar —</option>
-                                            <option value="alta">Alta</option>
-                                            <option value="media">Media</option>
-                                            <option value="baja">Baja</option>
+                                            <option value="Alta">Alta</option>
+                                            <option value="Media">Media</option>
+                                            <option value="Baja">Baja</option>
                                         </select>
                                     </div>
                                 </div>
@@ -109,7 +151,9 @@
             <div id="creadas" class="section" style="display:none;">
                 <div class="tarjeta">
                     <div class="tarjeta-encabezado">
-                        <div class="tarjeta-titulo">Mis solicitudes <span class="pastilla-contador">Era bait, solo hay 3</span></div>
+                        <?php if ($totalSolicitudes > 0): ?>
+                            <div class="tarjeta-titulo">Mis solicitudes <span class="nav-contador"><?= $totalSolicitudes ?></span></div>
+                        <?php endif; ?>
                         <button class="btn btn-primario btn-pequeno" onclick="navTo('crear')">Nueva solicitud</button>
                     </div>
 
@@ -138,31 +182,50 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <!-- Datos de ejemplo para que mas o menos vean como quedaría la vaina-->
-                                <tr>
-                                    <td><span class="texto-apagado texto-xs">#067</span></td>
-                                    <td><strong>Equipo sin acceso a red — Sala C-12</strong></td>
-                                    <td>Coordinación Académica</td>
-                                    <td><span class="etiqueta etiqueta-alta">Alta</span></td>
-                                    <td class="texto-apagado">01/03/2025</td>
-                                    <td><span class="etiqueta etiqueta-proceso"><span class="punto-estado-solicitud proceso"></span>En proceso</span></td>
-                                </tr>
-                                <tr>
-                                    <td><span class="texto-apagado texto-xs">#117</span></td>
-                                    <td><strong>Instalación de software contable</strong></td>
-                                    <td>Recursos Humanos</td>
-                                    <td><span class="etiqueta etiqueta-media">Media</span></td>
-                                    <td class="texto-apagado">26/02/2025</td>
-                                    <td><span class="etiqueta etiqueta-completada"><span class="punto-estado-solicitud completada"></span>Completada</span></td>
-                                </tr>
-                                <tr>
-                                    <td><span class="texto-apagado texto-xs">#777</span></td>
-                                    <td><strong>Proyector sin señal — Aula 304</strong></td>
-                                    <td>Docencia</td>
-                                    <td><span class="etiqueta etiqueta-baja">Baja</span></td>
-                                    <td class="texto-apagado">20/02/2025</td>
-                                    <td><span class="etiqueta etiqueta-pendiente"><span class="punto-estado-solicitud pendiente"></span>Pendiente</span></td>
-                                </tr>
+                                <?php if ($solicitudes->num_rows === 0): ?>
+                                    <tr>
+                                        <td colspan="6" style="text-align:center; color:#8f98b2;">
+                                            No tienes solicitudes registradas.
+                                        </td>
+                                    </tr>
+                                <?php else: ?>
+                                    <?php while ($s = $solicitudes->fetch_object()): ?>
+                                        <?php
+                                            $clasePrioridad = match(strtolower($s->prioridad)) {
+                                                'alta'  => 'etiqueta-alta',
+                                                'media' => 'etiqueta-media',
+                                                'baja'  => 'etiqueta-baja',
+                                                default => ''
+                                            };
+                                            $claseEstado = match(strtolower($s->estado)) {
+                                                'pendiente'  => 'etiqueta-pendiente',
+                                                'en proceso' => 'etiqueta-proceso',
+                                                'finalizada' => 'etiqueta-completada',
+                                                default      => ''
+                                            };
+                                            $puntoEstado = match(strtolower($s->estado)) {
+                                                'pendiente'  => 'pendiente',
+                                                'en proceso' => 'proceso',
+                                                'finalizada' => 'completada',
+                                                default      => ''
+                                            };
+                                            $fecha = date("d/m/Y", strtotime($s->fecha_creacion));
+                                        ?>
+                                        <tr>
+                                            <td><span class="texto-apagado texto-xs">#<?= $s->id_sol ?></span></td>
+                                            <td><strong><?= htmlspecialchars($s->encabezado) ?></strong></td>
+                                            <td><?= htmlspecialchars($s->area) ?></td>
+                                            <td><span class="etiqueta <?= $clasePrioridad ?>"><?= htmlspecialchars($s->prioridad) ?></span></td>
+                                            <td class="texto-apagado"><?= $fecha ?></td>
+                                            <td>
+                                                <span class="etiqueta <?= $claseEstado ?>">
+                                                    <span class="punto-estado-solicitud <?= $puntoEstado ?>"></span>
+                                                    <?= htmlspecialchars($s->estado) ?>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    <?php endwhile; ?>
+                                <?php endif; ?>
                             </tbody>
                         </table>
                     </div>
