@@ -1,10 +1,43 @@
+<!-- PHP -->
+<?php
+//Comprobación de sesión
+session_start();
+if (empty($_SESSION["id"]) || !is_numeric($_SESSION["id"]) || $_SESSION["id_rol"] != 2) {
+    header("Location: index.php");
+    exit();
+}
+$msgExito = $_SESSION["exito"] ?? null;
+$msgError = $_SESSION["error"] ?? null;
+unset($_SESSION["exito"], $_SESSION["error"]);
+
+require_once "php/conexion.php";
+
+$stmtSolicitudes = $conexion->prepare(
+    "SELECT s.id_sol, s.encabezado, s.descripcion, s.prioridad, s.fecha_creacion,
+            e.nombre AS estado,
+            u.nombre AS solicitante_nombre, u.app AS solicitante_app,
+            a.nombre AS area
+     FROM solicitud s
+     JOIN estado_solicitud e ON s.id_estado = e.id_estado
+     JOIN usuario u ON s.id_us = u.id_us
+     JOIN area a ON u.id_area = a.id_area
+     WHERE s.id_estado = 1      -- Los trabajadores solo pueden ver las solicitudes pendientes.
+     ORDER BY s.fecha_creacion DESC"
+);
+$stmtSolicitudes->execute();
+$solicitudes = $stmtSolicitudes->get_result();
+$totalSolicitudes = $solicitudes->num_rows;
+$stmtSolicitudes->close();
+?>
+
+<!-- HTML -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Solicitudes — Trabajador | ITSRV</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="layout-app">
 
@@ -18,9 +51,13 @@
                 </div>
             </div>
             <div class="usuario-pastilla">
-                <div class="usuario-avatar">GT</div>
+                <div class="usuario-avatar">
+                    <?php echo strtoupper(substr($_SESSION["nombre"], 0, 1) . substr($_SESSION["app"], 0, 1)); ?>
+                </div>
                 <div>
-                    <div class="usuario-nombre">Gustavo Tello</div>
+                    <div class="usuario-nombre">
+                        <?php echo htmlspecialchars($_SESSION["nombre"] . " " . $_SESSION["app"]); ?>
+                    </div>
                     <div class="usuario-rol">Trabajador</div>
                 </div>
             </div>
@@ -30,7 +67,9 @@
             <div class="nav-etiqueta-seccion">Principal</div>
             <a href="#" class="nav-link nav-item active" data-section="solicitudes">
                 Solicitudes
-                <span class="nav-contador">3</span>
+                <?php if ($totalSolicitudes > 0): ?>
+                    <span class="nav-contador"><?= $totalSolicitudes ?></span>
+                <?php endif; ?>
             </a>
             <a href="#" class="nav-link nav-item" data-section="reporte">
                 Reporte de Solicitud
@@ -41,7 +80,7 @@
         </nav>
 
         <div class="sidebar-pie">
-            <a href="InicioSesion.html" class="btn-cerrar-sesion" onclick="cerrarSesion()">
+            <a href="php/controlador_cerrar.php" class="btn-cerrar-sesion">
                 <span>❌</span> Cerrar Sesión
             </a>
         </div>
@@ -57,6 +96,12 @@
         </header>
 
         <div class="cuerpo-pagina">
+            <?php if ($msgExito): ?>
+                <div class="alerta alerta-exito"><?= htmlspecialchars($msgExito) ?></div>
+            <?php endif; ?>
+            <?php if ($msgError): ?>
+                <div class="alerta alerta-error"><?= htmlspecialchars($msgError) ?></div>
+            <?php endif; ?>
 
             <div id="solicitudes" class="section active">
                 <div class="columnas-dashboard">
@@ -66,79 +111,47 @@
                             <div class="tarjeta-titulo">Solicitudes disponibles</div>
                         </div>
                         <div style="padding: 12px;">
-
-                            <div class="tarjeta-solicitud solicitud-item" data-id="1">
-                                <div class="barra-prioridad alta"></div>
-                                <div class="cuerpo-solicitud solicitud-details">
-                                    <div class="solicitud-titulo-texto">
-                                        <h3>Solicitud de soporte técnico</h3>
+                            <?php if ($totalSolicitudes === 0): ?>
+                                <p style="color:#8f98b2; text-align:center; padding:16px;">
+                                    No hay solicitudes pendientes.
+                                </p>
+                            <?php else: ?>
+                                <?php while ($s = $solicitudes->fetch_object()): ?>
+                                    <?php
+                                        $prioridad = strtolower($s->prioridad);
+                                        $solicitante = htmlspecialchars($s->solicitante_nombre . " " . $s->solicitante_app);
+                                        $fecha = date("d/m/Y", strtotime($s->fecha_creacion));
+                                    ?>
+                                    <div class="tarjeta-solicitud solicitud-item" data-id="<?= $s->id_sol ?>">
+                                        <div class="barra-prioridad <?= $prioridad ?>"></div>
+                                        <div class="cuerpo-solicitud">
+                                            <div class="solicitud-titulo-texto">
+                                                <h3><?= htmlspecialchars($s->encabezado) ?></h3>
+                                            </div>
+                                            <div class="solicitud-meta">
+                                                <span><strong>Usuario:</strong> <?= $solicitante ?></span>
+                                                <span><strong>Área:</strong> <?= htmlspecialchars($s->area) ?></span>
+                                                <span><strong>Fecha:</strong> <?= $fecha ?></span>
+                                            </div>
+                                            <p style="font-size:12px; margin-top:5px; color:#4d5a7a;">
+                                                <?= htmlspecialchars($s->descripcion) ?>
+                                            </p>
+                                            <p class="status" style="font-size:12px; margin-top:5px; color:#4d5a7a;">
+                                                <strong>Estado:</strong> <?= htmlspecialchars($s->estado) ?>
+                                            </p>
+                                        </div>
+                                        <div class="solicitud-acciones buttons">
+                                            <button class="btn btn-exito btn-pequeno" onclick="aceptarSolicitud(this, <?= $s->id_sol ?>)">Aceptar</button>
+                                            <button class="btn btn-peligro btn-pequeno" onclick="rechazarSolicitud(this, <?= $s->id_sol ?>)">Rechazar</button>
+                                            <button class="btn btn-advertencia btn-pequeno postpone">Posponer</button>
+                                        </div>
+                                        <div class="cancel-btn" style="display:none; gap:6px;">
+                                            <button class="btn btn-primario btn-pequeno create-report" onclick="crearReporte(<?= $s->id_sol ?>)">Crear Reporte</button>
+                                            <button class="btn btn-fantasma btn-pequeno" onclick="cancelarSolicitud(this, <?= $s->id_sol ?>)">Cancelar</button>
+                                        </div>
                                     </div>
-                                    <div class="solicitud-meta">
-                                        <span><strong>Usuario:</strong> Juan Pérez</span>
-                                        <span><strong>Área:</strong> IT</span>
-                                        <span><strong>Fecha:</strong> 2023-10-01</span>
-                                    </div>
-                                    <p class="status" style="font-size:12px; margin-top:5px; color:#4d5a7a;"><strong>Estado:</strong> Pendiente</p>
-                                </div>
-                                <div class="solicitud-acciones buttons">
-                                    <button class="btn btn-exito btn-pequeno accept" onclick="aceptarSolicitud(this, 1)">Aceptar</button>
-                                    <button class="btn btn-peligro btn-pequeno reject" onclick="rechazarSolicitud(this, 1)">Rechazar</button>
-                                    <button class="btn btn-advertencia btn-pequeno postpone">Posponer</button>
-                                </div>
-                                <div class="cancel-btn" style="display:none; gap:6px;">
-                                    <button class="btn btn-primario btn-pequeno create-report" onclick="crearReporte(1)">Crear reporte</button>
-                                    <button class="btn btn-fantasma btn-pequeno cancel" onclick="cancelarSolicitud(this, 1)">Cancelar</button>
-                                </div>
-                            </div>
-
-                            <div class="tarjeta-solicitud solicitud-item" data-id="2">
-                                <div class="barra-prioridad media"></div>
-                                <div class="cuerpo-solicitud solicitud-details">
-                                    <div class="solicitud-titulo-texto">
-                                        <h3>Actualización de software</h3>
-                                    </div>
-                                    <div class="solicitud-meta">
-                                        <span><strong>Usuario:</strong> María García</span>
-                                        <span><strong>Área:</strong> Desarrollo</span>
-                                        <span><strong>Fecha:</strong> 2023-09-28</span>
-                                    </div>
-                                    <p class="status" style="font-size:12px; margin-top:5px; color:#4d5a7a;"><strong>Estado:</strong> Pendiente</p>
-                                </div>
-                                <div class="solicitud-acciones buttons">
-                                    <button class="btn btn-exito btn-pequeno accept" onclick="aceptarSolicitud(this, 2)">Aceptar</button>
-                                    <button class="btn btn-peligro btn-pequeno reject" onclick="rechazarSolicitud(this, 2)">Rechazar</button>
-                                    <button class="btn btn-advertencia btn-pequeno postpone">Posponer</button>
-                                </div>
-                                <div class="cancel-btn" style="display:none; gap:6px;">
-                                    <button class="btn btn-primario btn-pequeno create-report" onclick="crearReporte(2)">Crear reporte</button>
-                                    <button class="btn btn-fantasma btn-pequeno cancel" onclick="cancelarSolicitud(this, 2)">Cancelar</button>
-                                </div>
-                            </div>
-
-                            <div class="tarjeta-solicitud solicitud-item" data-id="3">
-                                <div class="barra-prioridad baja"></div>
-                                <div class="cuerpo-solicitud solicitud-details">
-                                    <div class="solicitud-titulo-texto">
-                                        <h3>Reporte de bug</h3>
-                                    </div>
-                                    <div class="solicitud-meta">
-                                        <span><strong>Usuario:</strong> Carlos López</span>
-                                        <span><strong>Área:</strong> QA</span>
-                                        <span><strong>Fecha:</strong> 2023-09-25</span>
-                                    </div>
-                                    <p class="status" style="font-size:12px; margin-top:5px; color:#4d5a7a;"><strong>Estado:</strong> Pendiente</p>
-                                </div>
-                                <div class="solicitud-acciones buttons">
-                                    <button class="btn btn-exito btn-pequeno accept" onclick="aceptarSolicitud(this, 3)">Aceptar</button>
-                                    <button class="btn btn-peligro btn-pequeno reject" onclick="rechazarSolicitud(this, 3)">Rechazar</button>
-                                    <button class="btn btn-advertencia btn-pequeno postpone">Posponer</button>
-                                </div>
-                                <div class="cancel-btn" style="display:none; gap:6px;">
-                                    <button class="btn btn-primario btn-pequeno create-report" onclick="crearReporte(3)">Crear reporte</button>
-                                    <button class="btn btn-fantasma btn-pequeno cancel" onclick="cancelarSolicitud(this, 3)">Cancelar</button>
-                                </div>
-                            </div>
-
+                                <?php endwhile; ?>
+                            <?php endif; ?>
                         </div>
                     </div>
 
