@@ -3,7 +3,7 @@
 // Comprobación de sesión
 session_start();
 if (empty($_SESSION["id"]) || !is_numeric($_SESSION["id"]) || $_SESSION["id_rol"] != 3) {
-    header("location: index.php");
+    header("Location: index.php");
     exit();
 }
 $msgExito = $_SESSION["exito"] ?? null;
@@ -243,45 +243,45 @@ $stmtUsuarios->close();
                                         No hay usuarios registrados.
                                     </td>
                                 </tr>
-                            <?php else: ?>
-                                <?php while ($u = $usuarios->fetch_object()): ?>
-                                    <?php
-                                        $iniciales = strtoupper(substr($u->nombre, 0, 1) . substr($u->app, 0, 1));
-                                        $nombreCompleto = htmlspecialchars($u->nombre . " " . $u->app . ($u->apm ? " " . $u->apm : ""));
-                                        $claseRol = $u->rol === "Trabajador" ? "etiqueta-proceso" : "etiqueta-pendiente";
-                                    ?>
-                                    <tr>
-                                        <td>
-                                            <div class="flex items-center gap-2">
-                                                <div class="avatar-fila-tabla"><?= $iniciales ?></div>
-                                                <strong><?= $nombreCompleto ?></strong>
-                                            </div>
-                                        </td>
-                                        <td class="texto-apagado"><?= htmlspecialchars($u->username) ?></td>
-                                        <td class="texto-apagado"><?= htmlspecialchars($u->area) ?></td>
-                                        <td><span class="etiqueta <?= $claseRol ?>"><?= htmlspecialchars($u->rol) ?></span></td>
-                                        <td>
-                                            <?php if ($u->disponible): ?>
-                                                <span class="etiqueta etiqueta-completada">Sí</span>
-                                            <?php else: ?>
-                                                <span class="etiqueta etiqueta-cancelada">No</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
-                                            <div class="acciones-tabla">
-                                                <button class="btn btn-advertencia btn-pequeno"
-                                                        onclick="openModal('edit', <?= $u->id_us ?>, '<?= $nombreCompleto ?>', '<?= htmlspecialchars($u->nombre) ?>', '<?= htmlspecialchars($u->app) ?>', '<?= htmlspecialchars($u->apm ?? "") ?>', '<?= htmlspecialchars($u->username) ?>', <?= $u->id_rol ?>, <?= $u->id_area ?>)">
-                                                    Editar
-                                                </button>
-                                                <button class="btn btn-peligro btn-pequeno"
-                                                        onclick="deleteUser(<?= $u->id_us ?>, '<?= $nombreCompleto ?>')">
-                                                    Eliminar
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                <?php endwhile; ?>
-                            <?php endif; ?>
+                                <?php else: ?>
+                                    <?php while ($u = $usuarios->fetch_object()): ?>
+                                        <?php
+                                            $iniciales = strtoupper(substr($u->nombre, 0, 1) . substr($u->app, 0, 1));
+                                            $nombreCompleto = htmlspecialchars($u->nombre . " " . $u->app . ($u->apm ? " " . $u->apm : ""));
+                                            $claseRol = $u->rol === "Trabajador" ? "etiqueta-proceso" : "etiqueta-pendiente";
+                                        ?>
+                                        <tr>
+                                            <td>
+                                                <div class="flex items-center gap-2">
+                                                    <div class="avatar-fila-tabla"><?= $iniciales ?></div>
+                                                    <strong><?= $nombreCompleto ?></strong>
+                                                </div>
+                                            </td>
+                                            <td class="texto-apagado"><?= htmlspecialchars($u->username) ?></td>
+                                            <td class="texto-apagado"><?= htmlspecialchars($u->area) ?></td>
+                                            <td><span class="etiqueta <?= $claseRol ?>"><?= htmlspecialchars($u->rol) ?></span></td>
+                                            <td>
+                                                <?php if ($u->disponible): ?>
+                                                    <span class="etiqueta etiqueta-completada">Sí</span>
+                                                <?php else: ?>
+                                                    <span class="etiqueta etiqueta-cancelada">No</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <div class="acciones-tabla">
+                                                    <button class="btn btn-advertencia btn-pequeno"
+                                                            onclick="openModal('edit', <?= $u->id_us ?>, '<?= $nombreCompleto ?>', '<?= htmlspecialchars($u->nombre) ?>', '<?= htmlspecialchars($u->app) ?>', '<?= htmlspecialchars($u->apm ?? "") ?>', '<?= htmlspecialchars($u->username) ?>', <?= $u->id_rol ?>, <?= $u->id_area ?>)">
+                                                        Editar
+                                                    </button>
+                                                    <button class="btn btn-peligro btn-pequeno"
+                                                            onclick="deleteUser(<?= $u->id_us ?>, '<?= $nombreCompleto ?>')">
+                                                        Eliminar
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endwhile; ?>
+                                <?php endif; ?>
                             </tbody>
                         </table>
                     </div>
