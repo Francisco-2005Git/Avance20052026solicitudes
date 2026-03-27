@@ -16,7 +16,7 @@ require_once "php/conexion.php";
 // Consulta de usuarios (excluyendo al admin loggeado y al rol 3 (los admins))
 $stmtUsuarios = $conexion->prepare(
     "SELECT u.id_us, u.nombre, u.app, u.apm, u.username, u.contrasena, u.disponible,
-            r.nombre AS rol, a.nombre AS area
+        u.id_rol, u.id_area, r.nombre AS rol, a.nombre AS area
      FROM usuario u
      JOIN rol r ON u.id_rol = r.id_rol
      JOIN area a ON u.id_area = a.id_area
@@ -270,11 +270,11 @@ $stmtUsuarios->close();
                                         <td>
                                             <div class="acciones-tabla">
                                                 <button class="btn btn-advertencia btn-pequeno"
-                                                        onclick="openModal('edit', '<?= $nombreCompleto ?>', '<?= strtolower($u->rol) ?>')">
+                                                        onclick="openModal('edit', <?= $u->id_us ?>, '<?= $nombreCompleto ?>', '<?= htmlspecialchars($u->nombre) ?>', '<?= htmlspecialchars($u->app) ?>', '<?= htmlspecialchars($u->apm ?? "") ?>', '<?= htmlspecialchars($u->username) ?>', <?= $u->id_rol ?>, <?= $u->id_area ?>)">
                                                     Editar
                                                 </button>
                                                 <button class="btn btn-peligro btn-pequeno"
-                                                        onclick="deleteUser('<?= $nombreCompleto ?>')">
+                                                        onclick="deleteUser(<?= $u->id_us ?>, '<?= $nombreCompleto ?>')">
                                                     Eliminar
                                                 </button>
                                             </div>
@@ -302,6 +302,7 @@ $stmtUsuarios->close();
 
             <form id="userForm" method="POST" action="php/controlador_usuario.php">
                 <input type="hidden" name="accion" value="agregar">
+                <input type="hidden" name="id_us" id="user-id">
 
                 <!-- Nombre -->
                 <div class="grupo-form">
@@ -321,8 +322,7 @@ $stmtUsuarios->close();
                 <div class="grupo-form">
                     <label class="etiqueta-form" for="user-apm">Apellido Materno</label>
                     <input class="campo-form" type="text" id="user-apm"
-                        name="apm" maxlength="50"
-                        placeholder="Opcional">
+                        name="apm" maxlength="50" placeholder="Opcional">
                 </div>
 
                 <!-- Username -->
@@ -335,15 +335,18 @@ $stmtUsuarios->close();
                 <!-- Contraseña -->
                 <div class="grupo-form">
                     <label class="etiqueta-form" for="user-password">Contraseña</label>
+                    <small id="password-nota" style="color:#8f98b2; display:none; font-size:10px;">
+                        Dejar vacío para no cambiar
+                    </small>
                     <input class="campo-form" type="password" id="user-password"
-                        name="password" minlength="8" maxlength="255" required>
+                        name="password" maxlength="255" required>
                 </div>
 
                 <!-- Confirmar Contraseña -->
                 <div class="grupo-form">
                     <label class="etiqueta-form" for="user-password2">Confirmar Contraseña</label>
                     <input class="campo-form" type="password" id="user-password2"
-                        name="password2" minlength="8" maxlength="255" required>
+                        name="password2" maxlength="255" required>
                 </div>
 
                 <!-- Rol -->
@@ -368,7 +371,7 @@ $stmtUsuarios->close();
                     </select>
                 </div>
 
-                <!-- Disponible (relevante para trabajadores) -->
+                <!-- Disponible -->
                 <div class="grupo-form">
                     <label class="etiqueta-form" for="user-disponible">Disponible</label>
                     <select class="campo-form" id="user-disponible" name="disponible">
