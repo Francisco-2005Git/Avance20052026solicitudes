@@ -1,11 +1,12 @@
 <!-- PHP -->
 <?php
-// Comprobación de sesión
 session_start();
 if (empty($_SESSION["id"]) || !is_numeric($_SESSION["id"]) || $_SESSION["id_rol"] != 3) {
     header("Location: index.php");
     exit();
 }
+
+// Este tipo de mensajes son los flash. Se envian para su lectura y después de cumplir su función son obliterados
 $msgExito = $_SESSION["exito"] ?? null;
 $msgError = $_SESSION["error"] ?? null;
 $seccionActiva = $_SESSION["seccion_activa"] ?? null;
@@ -13,15 +14,14 @@ unset($_SESSION["exito"], $_SESSION["error"], $_SESSION["seccion_activa"]);
 
 require_once "php/conexion.php";
 
-// Consulta de usuarios (excluyendo al admin loggeado y al rol 3 (los admins))
 $stmtUsuarios = $conexion->prepare(
     "SELECT u.id_us, u.nombre, u.app, u.apm, u.username, u.contrasena, u.disponible,
         u.id_rol, u.id_area, r.nombre AS rol, a.nombre AS area
-     FROM usuario u
-     JOIN rol r ON u.id_rol = r.id_rol
-     JOIN area a ON u.id_area = a.id_area
-     WHERE u.id_us != ? AND u.id_rol != 3
-     ORDER BY u.nombre ASC"
+    FROM usuario u
+    JOIN rol r ON u.id_rol = r.id_rol
+    JOIN area a ON u.id_area = a.id_area
+    WHERE u.id_us != ? AND u.id_rol != 3
+    ORDER BY u.nombre ASC"
 );
 $stmtUsuarios->bind_param("i", $_SESSION["id"]);
 $stmtUsuarios->execute();
@@ -50,31 +50,26 @@ $stmtUsuarios->close();
                 </div>
             </div>
             <div class="usuario-pastilla">
+                <!-- El administrador. En color para que se distinga de entre los demás -->
                 <div class="usuario-avatar" style="background-color:#3d6bbf;">AD</div>
                 <div>
                     <div class="usuario-nombre">
-                        <?php 
-                            echo $_SESSION["nombre"]. " " .$_SESSION["app"];
-                        ?>
+                        <?php echo $_SESSION["nombre"]. " " .$_SESSION["app"]; ?>
                     </div>
                     <div class="usuario-rol">Control total</div>
                 </div>
             </div>
         </div>
 
+        <!-- La sección de los datos: Redirige a la sección correspondiente -->
         <nav class="sidebar-nav">
             <div class="nav-etiqueta-seccion">Panel</div>
-            <a href="#" class="nav-link nav-item active" data-section="bitacora">
-                Bitácora
-            </a>
-            <a href="#" class="nav-link nav-item" data-section="generar-reporte">
-                Generar Reporte
-            </a>
-            <a href="#" class="nav-link nav-item" data-section="admin-usuarios">
-                Administrar Usuarios
-            </a>
+            <a href="#" class="nav-link nav-item active" data-section="bitacora">Bitácora</a>
+            <a href="#" class="nav-link nav-item" data-section="generar-reporte">Generar Reporte</a>
+            <a href="#" class="nav-link nav-item" data-section="admin-usuarios">Administrar Usuarios</a>
         </nav>
-        <!-- El controlador PHP hace el trabajo de cerrar sesión -->
+
+        <!-- El controlador PHP destruye la sesión antes de redirigir -->
         <div class="sidebar-pie">
             <a href="php/controlador_cerrar.php" class="btn-cerrar-sesion">
                 <span>❌</span> Cerrar Sesión
@@ -84,6 +79,7 @@ $stmtUsuarios->close();
 
     <div class="contenido-principal">
 
+        <!-- eL topbar se actualiza al navegar entre secciones -->
         <header class="topbar">
             <div>
                 <div class="topbar-titulo" id="topbar-titulo">Bitácora</div>
@@ -92,21 +88,21 @@ $stmtUsuarios->close();
         </header>
 
         <div class="cuerpo-pagina">
-            <!-- Mensajes que pueden aparecer en la parte superior después de la creación de un nuevo usuario -->
+
+            <!-- El mensaje flash solo aparece si el controlador dejó un mensaje en sesión -->
             <?php if ($msgExito): ?>
                 <div class="alerta alerta-exito"><?= htmlspecialchars($msgExito) ?></div>
             <?php endif; ?>
-
             <?php if ($msgError): ?>
                 <div class="alerta alerta-error"><?= htmlspecialchars($msgError) ?></div>
             <?php endif; ?>
 
+            <!-- BITÁCORA -->
             <div id="bitacora" class="section active">
                 <div class="tarjeta">
                     <div class="tarjeta-encabezado">
                         <div class="tarjeta-titulo">Bitácora de solicitudes</div>
                     </div>
-
                     <div class="barra-herramientas">
                         <div class="campo-busqueda">
                             <input class="campo-form" type="text" placeholder="Buscar en bitácora...">
@@ -125,7 +121,7 @@ $stmtUsuarios->close();
                             <option>Recursos Humanos</option>
                         </select>
                     </div>
-
+                    <!-- loop PHP y datos de la BD. (NOTA: Datos de ejemplo)-->
                     <div class="contenedor-tabla">
                         <table>
                             <thead>
@@ -138,7 +134,6 @@ $stmtUsuarios->close();
                                 </tr>
                             </thead>
                             <tbody>
-                                <!-- Datos de ejemplo; en un sistema real, esto vendría de un backend -->
                                 <tr>
                                     <td>Juan Pérez</td>
                                     <td>Carlos López</td>
@@ -166,6 +161,8 @@ $stmtUsuarios->close();
                 </div>
             </div>
 
+            <!-- GENERAR REPORTE  -->
+            <!-- La acción se define ya cuando el back-end esté listo -->
             <div id="generar-reporte" class="section" style="display:none;">
                 <div class="tarjeta" style="max-width:620px;">
                     <div class="tarjeta-encabezado">
@@ -173,7 +170,6 @@ $stmtUsuarios->close();
                     </div>
                     <div class="tarjeta-cuerpo">
                         <form action="#" method="post">
-
                             <div class="grupo-form">
                                 <label class="etiqueta-form" for="tipo-reporte">Tipo de reporte</label>
                                 <select class="campo-form" id="tipo-reporte" name="tipo-reporte" required>
@@ -183,7 +179,7 @@ $stmtUsuarios->close();
                                     <option value="personalizado">Personalizado</option>
                                 </select>
                             </div>
-
+                            <!-- Este div es un grid de dos columnas -->
                             <div class="fila-form">
                                 <div class="grupo-form">
                                     <label class="etiqueta-form" for="fecha-inicio">Fecha de inicio</label>
@@ -194,25 +190,25 @@ $stmtUsuarios->close();
                                     <input class="campo-form" type="date" id="fecha-fin" name="fecha-fin" required>
                                 </div>
                             </div>
-
                             <div class="grupo-form">
                                 <label class="etiqueta-form" for="descripcion-reporte">Descripción adicional</label>
                                 <textarea class="campo-form" id="descripcion-reporte" name="descripcion-reporte" rows="4" placeholder="Describe el reporte"></textarea>
                             </div>
-
                             <button type="submit" class="btn btn-primario">Generar Reporte</button>
                         </form>
                     </div>
                 </div>
             </div>
 
+            <!-- ADMINISTRAR USUARIOS -->
             <div id="admin-usuarios" class="section" style="display:none;">
                 <div class="tarjeta">
                     <div class="tarjeta-encabezado">
                         <div class="tarjeta-titulo">Administrar Usuarios</div>
+                        <!-- Se abre el modal para  agregar usuarios nuevos -->
                         <button class="btn btn-primario btn-pequeno add-user" onclick="openModal('add')">Agregar Usuario</button>
                     </div>
-
+                    <!-- Busqueda y filtro de roles para que el admin encuentre usuarios específicos -->
                     <div class="barra-herramientas">
                         <div class="campo-busqueda">
                             <input class="campo-form" type="text" id="buscar-usuario" placeholder="Buscar usuario...">
@@ -223,7 +219,6 @@ $stmtUsuarios->close();
                             <option value="solicitante">Solicitante</option>
                         </select>
                     </div>
-
                     <div class="contenedor-tabla">
                         <table>
                             <thead>
@@ -236,6 +231,7 @@ $stmtUsuarios->close();
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
+                            <!-- Se hace un filtro de filas -->
                             <tbody id="tabla-usuarios">
                             <?php if ($usuarios->num_rows === 0): ?>
                                 <tr>
@@ -243,45 +239,46 @@ $stmtUsuarios->close();
                                         No hay usuarios registrados.
                                     </td>
                                 </tr>
-                                <?php else: ?>
-                                    <?php while ($u = $usuarios->fetch_object()): ?>
-                                        <?php
-                                            $iniciales = strtoupper(substr($u->nombre, 0, 1) . substr($u->app, 0, 1));
-                                            $nombreCompleto = htmlspecialchars($u->nombre . " " . $u->app . ($u->apm ? " " . $u->apm : ""));
-                                            $claseRol = $u->rol === "Trabajador" ? "etiqueta-proceso" : "etiqueta-pendiente";
-                                        ?>
-                                        <tr>
-                                            <td>
-                                                <div class="flex items-center gap-2">
-                                                    <div class="avatar-fila-tabla"><?= $iniciales ?></div>
-                                                    <strong><?= $nombreCompleto ?></strong>
-                                                </div>
-                                            </td>
-                                            <td class="texto-apagado"><?= htmlspecialchars($u->username) ?></td>
-                                            <td class="texto-apagado"><?= htmlspecialchars($u->area) ?></td>
-                                            <td><span class="etiqueta <?= $claseRol ?>"><?= htmlspecialchars($u->rol) ?></span></td>
-                                            <td>
-                                                <?php if ($u->disponible): ?>
-                                                    <span class="etiqueta etiqueta-completada">Sí</span>
-                                                <?php else: ?>
-                                                    <span class="etiqueta etiqueta-cancelada">No</span>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td>
-                                                <div class="acciones-tabla">
-                                                    <button class="btn btn-advertencia btn-pequeno"
-                                                            onclick="openModal('edit', <?= $u->id_us ?>, '<?= $nombreCompleto ?>', '<?= htmlspecialchars($u->nombre) ?>', '<?= htmlspecialchars($u->app) ?>', '<?= htmlspecialchars($u->apm ?? "") ?>', '<?= htmlspecialchars($u->username) ?>', <?= $u->id_rol ?>, <?= $u->id_area ?>)">
-                                                        Editar
-                                                    </button>
-                                                    <button class="btn btn-peligro btn-pequeno"
-                                                            onclick="deleteUser(<?= $u->id_us ?>, '<?= $nombreCompleto ?>')">
-                                                        Eliminar
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endwhile; ?>
-                                <?php endif; ?>
+                            <?php else: ?>
+                                <?php while ($u = $usuarios->fetch_object()): ?>
+                                    <?php
+                                        $iniciales = strtoupper(substr($u->nombre, 0, 1) . substr($u->app, 0, 1));
+                                        $nombreCompleto = htmlspecialchars($u->nombre . " " . $u->app . ($u->apm ? " " . $u->apm : ""));
+                                        $claseRol = $u->rol === "Trabajador" ? "etiqueta-proceso" : "etiqueta-pendiente";
+                                    ?>
+                                    <tr>
+                                        <td>
+                                            <div class="flex items-center gap-2">
+                                                <div class="avatar-fila-tabla"><?= $iniciales ?></div>
+                                                <strong><?= $nombreCompleto ?></strong>
+                                            </div>
+                                        </td>
+                                        <td class="texto-apagado"><?= htmlspecialchars($u->username) ?></td>
+                                        <td class="texto-apagado"><?= htmlspecialchars($u->area) ?></td>
+                                        <td><span class="etiqueta <?= $claseRol ?>"><?= htmlspecialchars($u->rol) ?></span></td>
+                                        <td>
+                                            <?php if ($u->disponible): ?>
+                                                <span class="etiqueta etiqueta-completada">Sí</span>
+                                            <?php else: ?>
+                                                <span class="etiqueta etiqueta-cancelada">No</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <div class="acciones-tabla">
+                                                <!-- Todos los datos del usuario se pasan al JS para pre-rellenar el modal sin necesidad de un fetch -->
+                                                <button class="btn btn-advertencia btn-pequeno"
+                                                        onclick="openModal('edit', <?= $u->id_us ?>, '<?= $nombreCompleto ?>', '<?= htmlspecialchars($u->nombre) ?>', '<?= htmlspecialchars($u->app) ?>', '<?= htmlspecialchars($u->apm ?? "") ?>', '<?= htmlspecialchars($u->username) ?>', <?= $u->id_rol ?>, <?= $u->id_area ?>)">
+                                                    Editar
+                                                </button>
+                                                <button class="btn btn-peligro btn-pequeno"
+                                                        onclick="deleteUser(<?= $u->id_us ?>, '<?= $nombreCompleto ?>')">
+                                                    Eliminar
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endwhile; ?>
+                            <?php endif; ?>
                             </tbody>
                         </table>
                     </div>
@@ -291,10 +288,11 @@ $stmtUsuarios->close();
         </div>
     </div>
 
-    <!-- Sección para agregar/editar usuario -->
+    <!-- MODAL: AGREGAR / EDITAR USUARIO  -->
     <div id="userModal" class="fondo-modal">
         <div class="modal">
             <div class="modal-encabezado">
+                <!-- JS cambia este texto entre "Agregar Usuario" y "Editar Usuario" -->
                 <div class="modal-titulo" id="modal-title">Agregar Usuario</div>
                 <button class="modal-cerrar" onclick="closeModal()">✕</button>
             </div>
@@ -304,52 +302,42 @@ $stmtUsuarios->close();
                 <input type="hidden" name="accion" value="agregar">
                 <input type="hidden" name="id_us" id="user-id">
 
-                <!-- Nombre -->
                 <div class="grupo-form">
                     <label class="etiqueta-form" for="user-nombre">Nombre</label>
-                    <input class="campo-form" type="text" id="user-nombre"
-                        name="nombre" maxlength="50" required>
+                    <input class="campo-form" type="text" id="user-nombre" name="nombre" maxlength="50" required>
                 </div>
 
-                <!-- Apellido Paterno -->
                 <div class="grupo-form">
                     <label class="etiqueta-form" for="user-app">Apellido Paterno</label>
-                    <input class="campo-form" type="text" id="user-app"
-                        name="app" maxlength="50" required>
+                    <input class="campo-form" type="text" id="user-app" name="app" maxlength="50" required>
                 </div>
 
-                <!-- Apellido Materno -->
+                <!-- Opcional: Es decir, no incluye el atributo required que obliga a rellenar ese input -->
                 <div class="grupo-form">
                     <label class="etiqueta-form" for="user-apm">Apellido Materno</label>
-                    <input class="campo-form" type="text" id="user-apm"
-                        name="apm" maxlength="50" placeholder="Opcional">
+                    <input class="campo-form" type="text" id="user-apm" name="apm" maxlength="50" placeholder="Opcional">
                 </div>
 
-                <!-- Username -->
                 <div class="grupo-form">
                     <label class="etiqueta-form" for="user-name">Usuario/Username</label>
-                    <input class="campo-form" type="text" id="user-name"
-                        name="username" maxlength="50" required>
+                    <input class="campo-form" type="text" id="user-name" name="username" maxlength="50" required>
                 </div>
 
-                <!-- Contraseña -->
+                <!-- La nota se muestra en modo edición -->
                 <div class="grupo-form">
                     <label class="etiqueta-form" for="user-password">Contraseña</label>
                     <small id="password-nota" style="color:#8f98b2; display:none; font-size:10px;">
                         Dejar vacío para no cambiar
                     </small>
-                    <input class="campo-form" type="password" id="user-password"
-                        name="password" maxlength="255" required>
+                    <input class="campo-form" type="password" id="user-password" name="password" maxlength="255" required>
                 </div>
 
-                <!-- Confirmar Contraseña -->
+                <!-- Se valida si ambas contraseñas coinciden.  -->
                 <div class="grupo-form">
                     <label class="etiqueta-form" for="user-password2">Confirmar Contraseña</label>
-                    <input class="campo-form" type="password" id="user-password2"
-                        name="password2" maxlength="255" required>
+                    <input class="campo-form" type="password" id="user-password2" name="password2" maxlength="255" required>
                 </div>
 
-                <!-- Rol -->
                 <div class="grupo-form">
                     <label class="etiqueta-form" for="user-role">Rol</label>
                     <select class="campo-form" id="user-role" name="id_rol" required>
@@ -359,7 +347,6 @@ $stmtUsuarios->close();
                     </select>
                 </div>
 
-                <!-- Área -->
                 <div class="grupo-form">
                     <label class="etiqueta-form" for="user-area">Área</label>
                     <select class="campo-form" id="user-area" name="id_area" required>
@@ -371,7 +358,6 @@ $stmtUsuarios->close();
                     </select>
                 </div>
 
-                <!-- Disponible -->
                 <div class="grupo-form">
                     <label class="etiqueta-form" for="user-disponible">Disponible</label>
                     <select class="campo-form" id="user-disponible" name="disponible">

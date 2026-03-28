@@ -7,8 +7,9 @@
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="pagina-login">
-
+<!-- .pagina-login: display flex, centra el contenido en 100vh -->
     <div class="login-contenedor">
+        <!-- max-width 420px -->
         <div class="login-tarjeta">
 
             <?php 
@@ -26,12 +27,13 @@
 
             <div class="login-titulo">Bienvenido</div>
             <div class="login-subtitulo">Ingresa tus credenciales para acceder al sistema.</div>
-
+            <!-- action="" envía el POST al mismo archivo (en este caso el propio index.php) -->
             <form action="" method="post">
 
                 <div class="grupo-form">
                     <label class="etiqueta-form" for="username">Usuario</label>
                     <div class="campo-c">
+                    <!-- .campo-c hace referencia a la posición relativa para el botón/input -->
                         <input class="campo-form" type="text" id="username" name="username" placeholder="Nombre de usuario" required>
                     </div>
                 </div>
@@ -40,17 +42,17 @@
                     <label class="etiqueta-form" for="password">Contraseña</label>
                     <div class="campo-c">
                         <input class="campo-form" type="password" id="password" name="password" placeholder="••••••••" required>
-                    <!-- <button type="button" id="togglePass" class="btn-mostrar-contrasena">👁</button> En proceso de procesar calma cooldown --> 
+                        <button type="button" id="togglePass" class="btn-mostrar-contrasena">👁</button>
                     </div>
                 </div>
-
+                <!-- input que funciona como botón. Envía los datos para su validación en la BD -->
                 <input type="submit" class="btn-iniciar-sesion" name="btn-iniciar-sesion" value="Iniciar Sesión">
             </form>
 
         </div>
 
         <div class="login-pie">
-            Sistema de Gestión de Soporte Técnico --- ITSRV © 2026
+            Sistema de Gestión de Soporte Técnico | MAKASU Y ASOCIADOS --- ITSRV © 2026
         </div>
     </div>
 
