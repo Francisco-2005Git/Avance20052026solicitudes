@@ -1,8 +1,8 @@
 <?php
 require_once "conexion.php";
 
-// Este archivo no pertenece a la Implementación final, tras crear un solo admin
-// debería ser eliminado.
+// Este archivo no pertenece a la Implementación final, tras crear al admin
+// se recomienda eliminar este archivo.
 
 // Creación de un usuario Admin para ingresar sus datos en el login
 // y entonces agregar nuevos usuarios dentro de la interfaz de Administrador.

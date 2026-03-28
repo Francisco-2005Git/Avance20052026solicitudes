@@ -1,13 +1,15 @@
+// Secciones de la página
 var titulosPagina = {
     solicitudes:    'Solicitudes',
     reporte:        'Reporte de Solicitud',
     notificaciones: 'Notificaciones'
 };
 
-var acceptedRequests = {}; // Objeto para almacenar solicitudes aceptadas
+var acceptedRequests = {};
 
 inicializarNavegacion(titulosPagina);
 
+// Funciones para mostrar los distintos estados de las solicitudes en la interfaz de los trabajadores
 function aceptarSolicitud(button, id) {
     var item = button.closest('.solicitud-item');
     item.classList.add('accepted');
@@ -45,6 +47,7 @@ function cancelarSolicitud(button, id) {
     delete acceptedRequests[id];
 }
 
+// Función para el botón de Crear Reporte, temporal
 function crearReporte(id) {
     if (acceptedRequests[id]) {
         var datos = acceptedRequests[id];

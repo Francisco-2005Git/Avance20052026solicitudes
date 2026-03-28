@@ -1,3 +1,7 @@
+<!-- Comentario temporal -->
+<!-- Usar crearADMIN.php después de crear la base de datos y poner los datos correctos en conexion.php -->
+<!-- Solo entonces será posible ingresar a crear más usuarios desde la interfaz del Administrador -->
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -52,7 +56,7 @@
         </div>
 
         <div class="login-pie">
-            Sistema de Gestión de Soporte Técnico | MAKASU Y ASOCIADOS --- ITSRV © 2026
+            Sistema de Gestión de Soporte Técnico --- ITSRV © 2026
         </div>
     </div>
 

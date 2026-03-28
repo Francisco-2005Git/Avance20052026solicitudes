@@ -1,3 +1,4 @@
+// Secciones de la página
 var titulosPagina = {
     crear:   'Nueva Solicitud',
     creadas: 'Mis Solicitudes'

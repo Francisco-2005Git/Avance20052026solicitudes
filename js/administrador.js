@@ -19,6 +19,7 @@ function openModal(action, id, nombreCompleto, nombre, app, apm, username, idRol
     var inputPass2 = document.getElementById('user-password2');
     var accion     = document.querySelector('#userForm input[name="accion"]');
 
+    // Agregar un nuevo usuario
     if (action === 'add') {
         title.textContent      = 'Agregar Usuario';
         accion.value           = 'agregar';
@@ -40,6 +41,7 @@ function openModal(action, id, nombreCompleto, nombre, app, apm, username, idRol
         document.getElementById('user-disponible').value = '1';
         document.getElementById('user-disponible').closest('.grupo-form').style.display = '';
 
+    // Editar un usuario
     } else if (action === 'edit') {
         title.textContent      = 'Editar Usuario';
         accion.value           = 'editar';
@@ -72,7 +74,7 @@ document.getElementById('userModal').addEventListener('click', function(e) {
     if (e.target === this) closeModal();
 });
 
-// Borrar
+// Borrar un usuario
 function deleteUser(id, nombre) {
     if (confirm('¿Eliminar a ' + nombre + '? Esta acción no se puede deshacer.')) {
         var form = document.createElement('form');
@@ -96,7 +98,7 @@ function deleteUser(id, nombre) {
     }
 }
 
-// Filtrado de tabla de usuarios
+// Filtrado de tabla de usuarios para la barra de búsqueda, después se pasará a comun.js
 (function () {
     var inputBuscar = document.getElementById("buscar-usuario");
     var selectRol   = document.getElementById("filtro-rol");

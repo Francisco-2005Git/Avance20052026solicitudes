@@ -1,3 +1,4 @@
+// Navegación de secciones en las páginas.
 function navegarSeccion(idSeccion, titulosPagina) {
     document.querySelectorAll('.section').forEach(function(seccion) {
         seccion.style.display = 'none';

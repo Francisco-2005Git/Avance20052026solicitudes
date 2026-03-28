@@ -79,7 +79,7 @@ $stmtUsuarios->close();
 
     <div class="contenido-principal">
 
-        <!-- eL topbar se actualiza al navegar entre secciones -->
+        <!-- El topbar se actualiza al navegar entre secciones -->
         <header class="topbar">
             <div>
                 <div class="topbar-titulo" id="topbar-titulo">Bitácora</div>
