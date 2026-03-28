@@ -6,23 +6,25 @@ if (empty($_SESSION["id"]) || !is_numeric($_SESSION["id"]) || $_SESSION["id_rol"
     header("Location: index.php");
     exit();
 }
+// Mensajes flash
 $msgExito = $_SESSION["exito"] ?? null;
 $msgError = $_SESSION["error"] ?? null;
 unset($_SESSION["exito"], $_SESSION["error"]);
 
 require_once "php/conexion.php";
 
+//  Trae solicitudes si la solicitud es id_estado = 1 (pendientes).
 $stmtSolicitudes = $conexion->prepare(
     "SELECT s.id_sol, s.encabezado, s.descripcion, s.prioridad, s.fecha_creacion,
             e.nombre AS estado,
             u.nombre AS solicitante_nombre, u.app AS solicitante_app,
             a.nombre AS area
-     FROM solicitud s
-     JOIN estado_solicitud e ON s.id_estado = e.id_estado
-     JOIN usuario u ON s.id_us = u.id_us
-     JOIN area a ON u.id_area = a.id_area
-     WHERE s.id_estado = 1      -- Los trabajadores solo pueden ver las solicitudes pendientes.
-     ORDER BY s.fecha_creacion DESC"
+    FROM solicitud s
+    JOIN estado_solicitud e ON s.id_estado = e.id_estado
+    JOIN usuario u ON s.id_us = u.id_us
+    JOIN area a ON u.id_area = a.id_area
+    WHERE s.id_estado = 1
+    ORDER BY s.fecha_creacion DESC"
 );
 $stmtSolicitudes->execute();
 $solicitudes = $stmtSolicitudes->get_result();
@@ -51,6 +53,7 @@ $stmtSolicitudes->close();
                 </div>
             </div>
             <div class="usuario-pastilla">
+                <!-- Iniciales calculadas desde la sesión ej. Juan Perez= JP -->
                 <div class="usuario-avatar">
                     <?php echo strtoupper(substr($_SESSION["nombre"], 0, 1) . substr($_SESSION["app"], 0, 1)); ?>
                 </div>
@@ -71,12 +74,8 @@ $stmtSolicitudes->close();
                     <span class="nav-contador"><?= $totalSolicitudes ?></span>
                 <?php endif; ?>
             </a>
-            <a href="#" class="nav-link nav-item" data-section="reporte">
-                Reporte de Solicitud
-            </a>
-            <a href="#" class="nav-link nav-item" data-section="notificaciones">
-                Notificaciones
-            </a>
+            <a href="#" class="nav-link nav-item" data-section="reporte">Reporte de Solicitud</a>
+            <a href="#" class="nav-link nav-item" data-section="notificaciones">Notificaciones</a>
         </nav>
 
         <div class="sidebar-pie">
@@ -103,7 +102,9 @@ $stmtSolicitudes->close();
                 <div class="alerta alerta-error"><?= htmlspecialchars($msgError) ?></div>
             <?php endif; ?>
 
+            <!-- SOLICITUDES -->
             <div id="solicitudes" class="section active">
+                <!-- Un grid con dos columnas. La lista y el Panel lateral -->
                 <div class="columnas-dashboard">
 
                     <div class="tarjeta">
@@ -118,9 +119,9 @@ $stmtSolicitudes->close();
                             <?php else: ?>
                                 <?php while ($s = $solicitudes->fetch_object()): ?>
                                     <?php
-                                        $prioridad = strtolower($s->prioridad);
+                                        $prioridad   = strtolower($s->prioridad);
                                         $solicitante = htmlspecialchars($s->solicitante_nombre . " " . $s->solicitante_app);
-                                        $fecha = date("d/m/Y", strtotime($s->fecha_creacion));
+                                        $fecha       = date("d/m/Y", strtotime($s->fecha_creacion));
                                     ?>
                                     <div class="tarjeta-solicitud solicitud-item" data-id="<?= $s->id_sol ?>">
                                         <div class="barra-prioridad <?= $prioridad ?>"></div>
@@ -140,12 +141,15 @@ $stmtSolicitudes->close();
                                                 <strong>Estado:</strong> <?= htmlspecialchars($s->estado) ?>
                                             </p>
                                         </div>
+                                        <!-- Botones principales que se ocultan al aceptar o rechazar -->
                                         <div class="solicitud-acciones buttons">
                                             <button class="btn btn-exito btn-pequeno" onclick="aceptarSolicitud(this, <?= $s->id_sol ?>)">Aceptar</button>
                                             <button class="btn btn-peligro btn-pequeno" onclick="rechazarSolicitud(this, <?= $s->id_sol ?>)">Rechazar</button>
                                             <button class="btn btn-advertencia btn-pequeno postpone">Posponer</button>
                                         </div>
+                                        <!-- Botones post-decisión que están ocultos hasta que se acepte o rechace -->
                                         <div class="cancel-btn" style="display:none; gap:6px;">
+                                            <!-- crearReporte() solo funciona si la solicitud fue aceptada -->
                                             <button class="btn btn-primario btn-pequeno create-report" onclick="crearReporte(<?= $s->id_sol ?>)">Crear Reporte</button>
                                             <button class="btn btn-fantasma btn-pequeno" onclick="cancelarSolicitud(this, <?= $s->id_sol ?>)">Cancelar</button>
                                         </div>
@@ -155,12 +159,13 @@ $stmtSolicitudes->close();
                         </div>
                     </div>
 
+                    <!-- Por parte del panel lateral se encuentran notificaciones y recientes -->
                     <div class="columna-derecha">
-
                         <div class="tarjeta">
                             <div class="tarjeta-encabezado">
                                 <div class="tarjeta-titulo">Notificaciones</div>
                             </div>
+                            <!-- .no-leida hace referencia a las notificaciones que en teoría aun no se abren/leen -->
                             <div class="item-notificacion no-leida">
                                 <span class="indicador-notificacion no-leida"></span>
                                 <div>
@@ -203,11 +208,12 @@ $stmtSolicitudes->close();
                                 <span class="etiqueta etiqueta-completada">Completada</span>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </div>
 
+            <!-- REPORTE  -->
+            <!-- El reporte se oculta al cargar pero crearReporte() lo activa y pre-rellena los campos -->
             <div id="reporte" class="section" style="display:none;">
                 <div class="tarjeta" style="max-width:680px;">
                     <div class="tarjeta-encabezado">
@@ -218,24 +224,24 @@ $stmtSolicitudes->close();
                             <p>Selecciona una solicitud aceptada para generar el reporte.</p>
                         </div>
                         <div id="report-form">
-                            <h3 style="margin-bottom:16px; font-size:14px;">Generar Reporte para: <span id="report-title"></span></h3>
+                            <h3 style="margin-bottom:16px; font-size:14px;">Generar Reporte para: <span id="report-title"></span>
+                            </h3>
                             <form action="#" method="post" enctype="multipart/form-data">
-
+                                <!-- Se pre-rellena desde crearReporte() -->
                                 <div class="grupo-form">
                                     <label class="etiqueta-form" for="titulo-reporte">Título del reporte</label>
                                     <input class="campo-form" type="text" id="titulo-reporte" name="titulo-reporte" placeholder="Ingresa el título" required>
                                 </div>
-
+                                <!-- Se pre-rellena desde crearReporte() -->
                                 <div class="grupo-form">
                                     <label class="etiqueta-form" for="descripcion-reporte">Descripción (problema y solución)</label>
                                     <textarea class="campo-form" id="descripcion-reporte" name="descripcion-reporte" rows="4" placeholder="Describe el problema y la solución" required></textarea>
                                 </div>
-
+                                <!-- El atributo multiple permite que se puedan subir más de una fotografía/evidencia -->
                                 <div class="grupo-form">
                                     <label class="etiqueta-form" for="fotos">Subir fotografías (evidencia)</label>
                                     <input class="campo-form" type="file" id="fotos" name="fotos" multiple accept="image/*">
                                 </div>
-
                                 <button type="submit" class="btn btn-primario">Guardar Reporte</button>
                             </form>
                         </div>
@@ -243,6 +249,7 @@ $stmtSolicitudes->close();
                 </div>
             </div>
 
+            <!-- NOTIFICACIONES -->
             <div id="notificaciones" class="section" style="display:none;">
                 <div class="tarjeta" style="max-width:600px;">
                     <div class="tarjeta-encabezado">

@@ -1,12 +1,13 @@
 <!-- PHP -->
 <!-- Comprobación de sesión -->
-
 <?php
 session_start();
 if (empty($_SESSION["id"]) || !is_numeric($_SESSION["id"]) || $_SESSION["id_rol"] != 1) {
     header("Location: index.php");
     exit();
 }
+
+// Mensajes flash
 $msgExito = $_SESSION["exito"] ?? null;
 $msgError = $_SESSION["error"] ?? null;
 unset($_SESSION["exito"], $_SESSION["error"]);
@@ -16,12 +17,12 @@ require_once "php/conexion.php";
 $stmtSolicitudes = $conexion->prepare(
     "SELECT s.id_sol, s.encabezado, s.prioridad, s.fecha_creacion,
             e.nombre AS estado, a.nombre AS area
-     FROM solicitud s
-     JOIN estado_solicitud e ON s.id_estado = e.id_estado
-     JOIN usuario u ON s.id_us = u.id_us
-     JOIN area a ON u.id_area = a.id_area
-     WHERE s.id_us = ?
-     ORDER BY s.fecha_creacion DESC"
+    FROM solicitud s
+    JOIN estado_solicitud e ON s.id_estado = e.id_estado
+    JOIN usuario u ON s.id_us = u.id_us
+    JOIN area a ON u.id_area = a.id_area
+    WHERE s.id_us = ?
+    ORDER BY s.fecha_creacion DESC"
 );
 $stmtSolicitudes->bind_param("i", $_SESSION["id"]);
 $stmtSolicitudes->execute();
@@ -51,6 +52,7 @@ $stmtSolicitudes->close();
                 </div>
             </div>
             <div class="usuario-pastilla">
+                <!-- Iniciales calculadas desde la sesión ej. Juan Perez= JP -->
                 <div class="usuario-avatar">
                     <?php echo strtoupper(substr($_SESSION["nombre"], 0, 1) . substr($_SESSION["app"], 0, 1)); ?>
                 </div>
@@ -65,11 +67,10 @@ $stmtSolicitudes->close();
 
         <nav class="sidebar-nav">
             <div class="nav-etiqueta-seccion">Solicitudes</div>
-            <a href="#" class="nav-link nav-item active" data-section="crear">
-                Nueva Solicitud
-            </a>
+            <a href="#" class="nav-link nav-item active" data-section="crear">Nueva Solicitud</a>
             <a href="#" class="nav-link nav-item" data-section="creadas">
                 Mis Solicitudes
+                <!-- El contador solo aparecerá si ya hay solicitudes -->
                 <?php if ($totalSolicitudes > 0): ?>
                     <span class="nav-contador"><?= $totalSolicitudes ?></span>
                 <?php endif; ?>
@@ -100,59 +101,70 @@ $stmtSolicitudes->close();
                 <div class="alerta alerta-error"><?= htmlspecialchars($msgError) ?></div>
             <?php endif; ?>
 
+            <!--  NUEVA SOLICITUD  -->
             <div id="crear" class="section active">
                 <div class="tarjeta" style="max-width: 680px;">
-                        <div class="tarjeta-encabezado">
-                            <div class="tarjeta-titulo">Nueva solicitud de soporte</div>
-                        </div>
-                        <div class="tarjeta-cuerpo">
-                            <form action="php/controlador_solicitud.php" method="POST">
+                    <div class="tarjeta-encabezado">
+                        <div class="tarjeta-titulo">Nueva solicitud de soporte</div>
+                    </div>
+                    <div class="tarjeta-cuerpo">
+                        <!-- Utiliza el método POST para enviar a controlador_solicitud.php por POST -->
+                        <form action="php/controlador_solicitud.php" method="POST">
 
+                            <div class="grupo-form">
+                                <label class="etiqueta-form" for="titulo">Título de la solicitud</label>
+                                <input class="campo-form" type="text" id="titulo" name="titulo"
+                                    placeholder="Ej: Equipo sin acceso a red" required>
+                            </div>
+
+                            <!--  red (grid) con dos columnas. Una  para Área y otra para Prioridad -->
+                            <div class="fila-form">
                                 <div class="grupo-form">
-                                    <label class="etiqueta-form" for="titulo">Título de la solicitud</label>
-                                    <input class="campo-form" type="text" id="titulo" name="titulo" placeholder="Ej: Equipo sin acceso a red" required>
+                                    <label class="etiqueta-form" for="area">Área</label>
+                                    <select class="campo-form" id="area" name="area" required>
+                                        <option value="">— Seleccionar —</option>
+                                        <option>Docencia</option>
+                                        <option>Coordinación Académica</option>
+                                        <option>Servicios Escolares</option>
+                                        <option>Recursos Humanos</option>
+                                    </select>
                                 </div>
-
-                                <div class="fila-form">
-                                    <div class="grupo-form">
-                                        <label class="etiqueta-form" for="area">Área</label>
-                                        <select class="campo-form" id="area" name="area" required>
-                                            <option value="">— Seleccionar —</option>
-                                            <option>Docencia</option>
-                                            <option>Coordinación Académica</option>
-                                            <option>Servicios Escolares</option>
-                                            <option>Recursos Humanos</option>
-                                        </select>
-                                    </div>
-                                    <div class="grupo-form">
-                                        <label class="etiqueta-form" for="prioridad">Prioridad</label>
-                                        <select class="campo-form" id="prioridad" name="prioridad" required>
-                                            <option value="">— Seleccionar —</option>
-                                            <option value="Alta">Alta</option>
-                                            <option value="Media">Media</option>
-                                            <option value="Baja">Baja</option>
-                                        </select>
-                                    </div>
-                                </div>
-
                                 <div class="grupo-form">
-                                    <label class="etiqueta-form" for="descripcion">Descripción detallada</label>
-                                    <textarea class="campo-form" id="descripcion" name="descripcion" rows="5" placeholder="Describe el problema con el mayor detalle posible" required></textarea>
+                                    <label class="etiqueta-form" for="prioridad">Prioridad</label>
+                                    <!-- value con mayúscula inicial para que coincida con los valores en BD -->
+                                    <select class="campo-form" id="prioridad" name="prioridad" required>
+                                        <option value="">— Seleccionar —</option>
+                                        <option value="Alta">Alta</option>
+                                        <option value="Media">Media</option>
+                                        <option value="Baja">Baja</option>
+                                    </select>
                                 </div>
+                            </div>
 
-                                <button type="submit" class="btn btn-primario w-full" style="justify-content:center; padding:10px;">
-                                    Enviar Solicitud
-                                </button>
-                            </form>
-                        </div>
+                            <div class="grupo-form">
+                                <label class="etiqueta-form" for="descripcion">Descripción detallada</label>
+                                <textarea class="campo-form" id="descripcion" name="descripcion"
+                                        rows="5" placeholder="Describe el problema con el mayor detalle posible" required></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-primario w-full"
+                                    style="justify-content:center; padding:10px;">
+                                Enviar Solicitud
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
 
+            <!-- MIS SOLICITUDES  -->
             <div id="creadas" class="section" style="display:none;">
                 <div class="tarjeta">
                     <div class="tarjeta-encabezado">
+                        <!-- Mismamente, el contador solo se genera si hay solicitudes -->
                         <?php if ($totalSolicitudes > 0): ?>
-                            <div class="tarjeta-titulo">Mis solicitudes <span class="nav-contador"><?= $totalSolicitudes ?></span></div>
+                            <div class="tarjeta-titulo">
+                                Mis solicitudes <span class="nav-contador"><?= $totalSolicitudes ?></span>
+                            </div>
                         <?php endif; ?>
                         <button class="btn btn-primario btn-pequeno" onclick="navTo('crear')">Nueva solicitud</button>
                     </div>
@@ -218,6 +230,7 @@ $stmtSolicitudes->close();
                                             <td><span class="etiqueta <?= $clasePrioridad ?>"><?= htmlspecialchars($s->prioridad) ?></span></td>
                                             <td class="texto-apagado"><?= $fecha ?></td>
                                             <td>
+                                                <!-- Círculo de color dentro de la etiqueta -->
                                                 <span class="etiqueta <?= $claseEstado ?>">
                                                     <span class="punto-estado-solicitud <?= $puntoEstado ?>"></span>
                                                     <?= htmlspecialchars($s->estado) ?>
