@@ -33,8 +33,8 @@ $stmtSolicitudes->close();
 
 // Trae las asignaciones activas y completadas del trabajador
 $stmtAsignaciones = $conexion->prepare(
-    "SELECT a.id_asg, a.estado_asignacion, a.fecha_inicio, a.fecha_fin,
-            s.encabezado, s.prioridad,
+    "SELECT a.id_asg, a.id_sol, a.estado_asignacion, a.fecha_inicio, a.fecha_fin,
+            s.encabezado, s.prioridad, s.id_estado,
             ar.nombre AS area
      FROM asignacion a
      JOIN solicitud s ON a.id_sol = s.id_sol
@@ -49,6 +49,18 @@ $stmtAsignaciones->execute();
 $asignaciones = $stmtAsignaciones->get_result();
 $totalAsignaciones = $asignaciones->num_rows;
 $stmtAsignaciones->close();
+$listaActivas     = [];
+$listaRevision    = [];
+$listaCompletadas = [];
+while ($a = $asignaciones->fetch_object()) {
+    if ($a->estado_asignacion === 'activa' && $a->id_estado == 4) {
+        $listaRevision[] = $a;
+    } elseif ($a->estado_asignacion === 'activa') {
+        $listaActivas[] = $a;
+    } else {
+        $listaCompletadas[] = $a;
+    }
+}
 ?>
 
 <!-- HTML -->
@@ -251,24 +263,47 @@ $stmtAsignaciones->close();
                             <p>Selecciona una solicitud aceptada para generar el reporte.</p>
                         </div>
                         <div id="report-form">
-                            <h3 style="margin-bottom:16px; font-size:14px;">Generar Reporte para: <span id="report-title"></span>
-                            </h3>
-                            <form action="#" method="post" enctype="multipart/form-data">
-                                <!-- Se pre-rellena desde crearReporte() -->
+                            <form id="form-reporte" action="php/controlador_trabajador.php" method="POST"
+                                enctype="multipart/form-data">
+                                <input type="hidden" name="accion" value="reporte">
+                                
+                                <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+                                    <h3 style="font-size:14px; margin:0;">Generar Reporte para:</h3>
+                                    <select class="campo-form" id="select-solicitud-reporte" name="id_sol"
+                                            style="width:auto; min-width:200px;">
+                                        <option value="" disabled selected>— Seleccionar Solicitud —</option>
+                                        <?php foreach ($listaActivas as $a): ?>
+                                            <option value="<?= $a->id_sol ?>">
+                                                <?= htmlspecialchars($a->encabezado) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+
                                 <div class="grupo-form">
                                     <label class="etiqueta-form" for="titulo-reporte">Título del reporte</label>
-                                    <input class="campo-form" type="text" id="titulo-reporte" name="titulo-reporte" placeholder="Ingresa el título" required>
+                                    <input class="campo-form" type="text" id="titulo-reporte"
+                                        name="encabezado" placeholder="Ingresa el título de tu reporte" required>
                                 </div>
-                                <!-- Se pre-rellena desde crearReporte() -->
+
                                 <div class="grupo-form">
-                                    <label class="etiqueta-form" for="descripcion-reporte">Descripción (problema y solución)</label>
-                                    <textarea class="campo-form" id="descripcion-reporte" name="descripcion-reporte" rows="4" placeholder="Describe el problema y la solución" required></textarea>
+                                    <label class="etiqueta-form" for="desc-problema">Descripción del problema</label>
+                                    <textarea class="campo-form" id="desc-problema" name="descripcion_problema"
+                                            rows="4" placeholder="Describe el problema detalladamente" required></textarea>
                                 </div>
-                                <!-- El atributo multiple permite que se puedan subir más de una fotografía/evidencia -->
+
+                                <div class="grupo-form">
+                                    <label class="etiqueta-form" for="desc-solucion">Solución</label>
+                                    <textarea class="campo-form" id="desc-solucion" name="descripcion_solucion"
+                                            rows="4" placeholder="Describe la solución detalladamente" required></textarea>
+                                </div>
+
                                 <div class="grupo-form">
                                     <label class="etiqueta-form" for="fotos">Subir fotografías (evidencia)</label>
-                                    <input class="campo-form" type="file" id="fotos" name="fotos" multiple accept="image/*">
+                                    <input class="campo-form" type="file" id="fotos" name="fotos[]"
+                                        multiple accept="image/*">
                                 </div>
+
                                 <button type="submit" class="btn btn-primario">Guardar Reporte</button>
                             </form>
                         </div>
@@ -302,18 +337,6 @@ $stmtAsignaciones->close();
                     <?php else: ?>
 
                         <!-- ACTIVAS -->
-                        <?php
-                            $hayActivas = false;
-                            $hayCompletadas = false;
-                            // Separar en dos arrays para renderizar en bloques distintos
-                            $listaActivas = [];
-                            $listaCompletadas = [];
-                            while ($a = $asignaciones->fetch_object()) {
-                                if ($a->estado_asignacion === 'activa') $listaActivas[] = $a;
-                                else $listaCompletadas[] = $a;
-                            }
-                        ?>
-
                         <?php if (!empty($listaActivas)): ?>
                             <div style="padding: 12px 16px 4px;">
                                 <p style="font-size:11px; font-weight:700; color:#8f98b2; text-transform:uppercase; letter-spacing:1px;">
@@ -353,6 +376,53 @@ $stmtAsignaciones->close();
                                                     <?= $a->fecha_fin ? date("d/m/Y", strtotime($a->fecha_fin)) : '—' ?>
                                                 </td>
                                                 <td><span class="etiqueta etiqueta-proceso">Activa</span></td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <?php endif; ?>
+                                        
+                        <!-- EN REVISIÓN -->
+                        <?php if (!empty($listaRevision)): ?>
+                            <div style="padding: 12px 16px 4px; margin-top: 8px;">
+                                <p style="font-size:11px; font-weight:700; color:#9a6400; text-transform:uppercase; letter-spacing:1px;">
+                                    En Revisión
+                                </p>
+                            </div>
+                            <div class="contenedor-tabla">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Título</th>
+                                            <th>Área</th>
+                                            <th>Prioridad</th>
+                                            <th>Fecha Inicio</th>
+                                            <th>Fecha Fin</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($listaRevision as $a): ?>
+                                            <tr>
+                                                <td><strong><?= htmlspecialchars($a->encabezado) ?></strong></td>
+                                                <td class="texto-apagado"><?= htmlspecialchars($a->area) ?></td>
+                                                <td>
+                                                    <?php
+                                                        $clasePrioridad = match(strtolower($a->prioridad)) {
+                                                            'alta'  => 'etiqueta-alta',
+                                                            'media' => 'etiqueta-media',
+                                                            'baja'  => 'etiqueta-baja',
+                                                            default => ''
+                                                        };
+                                                    ?>
+                                                    <span class="etiqueta <?= $clasePrioridad ?>"><?= htmlspecialchars($a->prioridad) ?></span>
+                                                </td>
+                                                <td class="texto-apagado"><?= date("d/m/Y", strtotime($a->fecha_inicio)) ?></td>
+                                                <td class="texto-apagado">
+                                                    <?= $a->fecha_fin ? date("d/m/Y", strtotime($a->fecha_fin)) : '—' ?>
+                                                </td>
+                                                <td><span class="etiqueta etiqueta-pendiente">En Revisión</span></td>
                                             </tr>
                                         <?php endforeach; ?>
                                     </tbody>

@@ -359,14 +359,6 @@ $stmtUsuarios->close();
                     </select>
                 </div>
 
-                <div class="grupo-form">
-                    <label class="etiqueta-form" for="user-disponible">Disponible</label>
-                    <select class="campo-form" id="user-disponible" name="disponible">
-                        <option value="1" selected>Sí</option>
-                        <option value="0">No</option>
-                    </select>
-                </div>
-
                 <div class="modal-pie">
                     <button type="submit" class="btn btn-primario">Guardar</button>
                     <button type="button" class="btn btn-fantasma" onclick="closeModal()">Cancelar</button>

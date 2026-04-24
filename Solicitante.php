@@ -183,9 +183,9 @@ $stmtAsignaciones->close();
 
                     <div class="barra-filtros">
                         <div class="campo-busqueda">
-                            <input class="campo-form" type="text" placeholder="Buscar solicitud...">
+                            <input class="campo-form" type="text" id="buscar-solicitud" placeholder="Buscar solicitud...">
                         </div>
-                        <select class="campo-form" style="width:auto; min-width:140px;">
+                        <select class="campo-form" id="filtro-estado" style="width:auto; min-width:140px;">
                             <option value="">Todos los estados</option>
                             <option>Pendiente</option>
                             <option>En proceso</option>
@@ -204,9 +204,10 @@ $stmtAsignaciones->close();
                                     <th>Fecha</th>
                                     <th>Fecha límite</th>
                                     <th>Estado</th>
+                                    <th>Acción</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="tabla-solicitudes">
                                 <?php if ($solicitudes->num_rows === 0): ?>
                                     <tr>
                                         <td colspan="6" style="text-align:center; color:#8f98b2;">
@@ -252,6 +253,17 @@ $stmtAsignaciones->close();
                                                     <span class="punto-estado-solicitud <?= $puntoEstado ?>"></span>
                                                     <?= htmlspecialchars($s->estado) ?>
                                                 </span>
+                                            </td>
+                                            <td>
+                                                <?php if (strtolower($s->estado) === 'en revisión'): ?>
+                                                    <form action="php/controlador_solicitud.php" method="POST">
+                                                        <input type="hidden" name="accion" value="aprobar">
+                                                        <input type="hidden" name="id_sol" value="<?= $s->id_sol ?>">
+                                                        <button type="submit" class="btn btn-exito btn-pequeno">Aprobar</button>
+                                                    </form>
+                                                <?php else: ?>
+                                                    <span class="texto-apagado texto-xs">—</span>
+                                                <?php endif; ?>
                                             </td>
                                         </tr>
                                     <?php endwhile; ?>

@@ -38,8 +38,6 @@ function openModal(action, id, nombreCompleto, nombre, app, apm, username, idRol
         inputPass2.value                                 = '';
         document.getElementById('user-role').value      = '';
         document.getElementById('user-area').value      = '';
-        document.getElementById('user-disponible').value = '1';
-        document.getElementById('user-disponible').closest('.grupo-form').style.display = '';
 
     // Editar un usuario
     } else if (action === 'edit') {
@@ -60,7 +58,6 @@ function openModal(action, id, nombreCompleto, nombre, app, apm, username, idRol
         inputPass2.value                                 = '';
         document.getElementById('user-role').value      = idRol;
         document.getElementById('user-area').value      = idArea;
-        document.getElementById('user-disponible').closest('.grupo-form').style.display = 'none';
     }
 
     document.getElementById('userModal').classList.add('abierto');
