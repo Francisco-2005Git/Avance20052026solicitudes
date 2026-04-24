@@ -22,7 +22,7 @@ $stmtSolicitudes = $conexion->prepare(
     FROM solicitud s
     JOIN estado_solicitud e ON s.id_estado = e.id_estado
     JOIN usuario u ON s.id_us = u.id_us
-    JOIN area a ON u.id_area = a.id_area
+    JOIN area a ON s.id_area = a.id_area
     WHERE s.id_estado = 1
     ORDER BY s.fecha_creacion DESC"
 );
@@ -38,8 +38,7 @@ $stmtAsignaciones = $conexion->prepare(
             ar.nombre AS area
      FROM asignacion a
      JOIN solicitud s ON a.id_sol = s.id_sol
-     JOIN usuario u ON s.id_us = u.id_us
-     JOIN area ar ON u.id_area = ar.id_area
+     JOIN area ar ON s.id_area = ar.id_area
      WHERE a.id_trabajador = ?
        AND a.estado_asignacion != 'cancelada'
      ORDER BY a.estado_asignacion ASC, a.fecha_inicio DESC"
@@ -107,8 +106,9 @@ while ($a = $asignaciones->fetch_object()) {
             </a>
             <a href="#" class="nav-link nav-item" data-section="mis-asignaciones">
                 Solicitudes Aceptadas
-                <?php if ($totalAsignaciones > 0): ?>
-                    <span class="nav-contador"><?= $totalAsignaciones ?></span>
+                <?php $totalActivas = count($listaActivas) + count($listaRevision); ?>
+                <?php if ($totalActivas > 0): ?>
+                    <span class="nav-contador"><?= $totalActivas ?></span>
                 <?php endif; ?>
             </a>
             <a href="#" class="nav-link nav-item" data-section="reporte">Reporte de Solicitud</a>
@@ -146,7 +146,7 @@ while ($a = $asignaciones->fetch_object()) {
 
                     <div class="tarjeta">
                         <div class="tarjeta-encabezado">
-                            <div class="tarjeta-titulo">Solicitudes disponibles</div>
+                            <div class="tarjeta-titulo">Solicitudes Disponibles</div>
                         </div>
                         <div style="padding: 12px;">
                             <?php if ($totalSolicitudes === 0): ?>
@@ -180,11 +180,9 @@ while ($a = $asignaciones->fetch_object()) {
                                                 <strong>Estado:</strong> <?= htmlspecialchars($s->estado) ?>
                                             </p>
                                         </div>
-                                        <!-- Botones principales que se ocultan al aceptar o rechazar -->
+                                        <!-- Botones principales que se ocultan al aceptar -->
                                         <div class="solicitud-acciones buttons">
-                                            <button class="btn btn-exito btn-pequeno" onclick="aceptarSolicitud(this, <?= $s->id_sol ?>)">Aceptar</button>
-                                            <button class="btn btn-peligro btn-pequeno" onclick="rechazarSolicitud(this, <?= $s->id_sol ?>)">Rechazar</button>
-                                            <button class="btn btn-advertencia btn-pequeno postpone">Posponer</button>
+                                            <button class="btn btn-exito btn-mediano" onclick="aceptarSolicitud(this, <?= $s->id_sol ?>)">Aceptar</button>
                                         </div>
                                         <!-- Botones post-decisión que están ocultos hasta que se acepte o rechace -->
                                         <div class="cancel-btn" style="display:none; gap:6px;">
@@ -198,56 +196,6 @@ while ($a = $asignaciones->fetch_object()) {
                         </div>
                     </div>
 
-                    <!-- Por parte del panel lateral se encuentran notificaciones y recientes -->
-                    <div class="columna-derecha">
-                        <div class="tarjeta">
-                            <div class="tarjeta-encabezado">
-                                <div class="tarjeta-titulo">Notificaciones</div>
-                            </div>
-                            <!-- .no-leida hace referencia a las notificaciones que en teoría aun no se abren/leen -->
-                            <div class="item-notificacion no-leida">
-                                <span class="indicador-notificacion no-leida"></span>
-                                <div>
-                                    <div class="notificacion-mensaje">Nueva solicitud disponible — #666</div>
-                                    <div class="notificacion-hora">hace 8 minutos</div>
-                                </div>
-                            </div>
-                            <div class="item-notificacion no-leida">
-                                <span class="indicador-notificacion no-leida"></span>
-                                <div>
-                                    <div class="notificacion-mensaje">Nueva solicitud disponible — #667</div>
-                                    <div class="notificacion-hora">hace 22 minutos</div>
-                                </div>
-                            </div>
-                            <div class="item-notificacion">
-                                <span class="indicador-notificacion leida"></span>
-                                <div>
-                                    <div class="notificacion-mensaje">#123 marcada como completada</div>
-                                    <div class="notificacion-hora">hace 2 horas</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="tarjeta">
-                            <div class="tarjeta-encabezado">
-                                <div class="tarjeta-titulo">Recientes</div>
-                            </div>
-                            <div class="item-historial">
-                                <div>
-                                    <div class="historial-titulo">Mouse sin respuesta — Dirección</div>
-                                    <div class="historial-meta">Dirección General · 14 min</div>
-                                </div>
-                                <span class="etiqueta etiqueta-completada">Completada</span>
-                            </div>
-                            <div class="item-historial">
-                                <div>
-                                    <div class="historial-titulo">PC lenta en biblioteca</div>
-                                    <div class="historial-meta">Servicios · 31 min</div>
-                                </div>
-                                <span class="etiqueta etiqueta-completada">Completada</span>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -323,11 +271,11 @@ while ($a = $asignaciones->fetch_object()) {
                 </div>
             </div>
             
-            <!-- MIS ASIGNACIONES -->
+            <!-- SOLICITUDES ACEPTADAS -->
             <div id="mis-asignaciones" class="section" style="display:none;">
                 <div class="tarjeta">
                     <div class="tarjeta-encabezado">
-                        <div class="tarjeta-titulo">Mis Asignaciones</div>
+                        <div class="tarjeta-titulo">Solicitudes Aceptadas</div>
                     </div>
 
                     <?php if ($totalAsignaciones === 0): ?>
@@ -344,7 +292,15 @@ while ($a = $asignaciones->fetch_object()) {
                                 </p>
                             </div>
                             <div class="contenedor-tabla">
-                                <table>
+                                <table style="table-layout:fixed; width:100%">
+                                        <colgroup>
+                                            <col style="width:30%">
+                                            <col style="width:15%">
+                                            <col style="width:12%">
+                                            <col style="width:13%">
+                                            <col style="width:13%">
+                                            <col style="width:17%">
+                                        </colgroup>
                                     <thead>
                                         <tr>
                                             <th>Título</th>
@@ -391,7 +347,15 @@ while ($a = $asignaciones->fetch_object()) {
                                 </p>
                             </div>
                             <div class="contenedor-tabla">
-                                <table>
+                                <table style="table-layout:fixed; width:100%">
+                                        <colgroup>
+                                            <col style="width:30%">
+                                            <col style="width:15%">
+                                            <col style="width:12%">
+                                            <col style="width:13%">
+                                            <col style="width:13%">
+                                            <col style="width:17%">
+                                        </colgroup>
                                     <thead>
                                         <tr>
                                             <th>Título</th>
@@ -438,7 +402,15 @@ while ($a = $asignaciones->fetch_object()) {
                                 </p>
                             </div>
                             <div class="contenedor-tabla">
-                                <table>
+                                <table style="table-layout:fixed; width:100%">
+                                        <colgroup>
+                                            <col style="width:30%">
+                                            <col style="width:15%">
+                                            <col style="width:12%">
+                                            <col style="width:13%">
+                                            <col style="width:13%">
+                                            <col style="width:17%">
+                                        </colgroup>
                                     <thead>
                                         <tr>
                                             <th>Título</th>

@@ -1,7 +1,8 @@
 // Secciones de la página
 var titulosPagina = {
-    crear:   'Nueva Solicitud',
-    creadas: 'Mis Solicitudes'
+    crear:          'Nueva Solicitud',
+    creadas:        'Mis Solicitudes',
+    notificaciones: 'Notificaciones'
 };
 
 function navTo(id) {

@@ -7,7 +7,7 @@ var titulosSecciones = {
 inicializarNavegacion(titulosSecciones);
 
 // Modal que cambia dependiendo de si se está agregando un usuario nuevo o editando a uno existente 
-function openModal(action, id, nombreCompleto, nombre, app, apm, username, idRol, idArea) {
+function openModal(action, id, nombre, app, apm, username, idRol) {
     nombre = nombre || '';
     app    = app    || '';
     apm    = apm    || '';
@@ -37,7 +37,6 @@ function openModal(action, id, nombreCompleto, nombre, app, apm, username, idRol
         inputPass.value                                  = '';
         inputPass2.value                                 = '';
         document.getElementById('user-role').value      = '';
-        document.getElementById('user-area').value      = '';
 
     // Editar un usuario
     } else if (action === 'edit') {
@@ -57,7 +56,6 @@ function openModal(action, id, nombreCompleto, nombre, app, apm, username, idRol
         inputPass.value                                  = '';
         inputPass2.value                                 = '';
         document.getElementById('user-role').value      = idRol;
-        document.getElementById('user-area').value      = idArea;
     }
 
     document.getElementById('userModal').classList.add('abierto');
@@ -114,7 +112,7 @@ function deleteUser(id, nombre) {
 
             var nombre   = (fila.cells[0]?.textContent || "").toLowerCase();
             var username = (fila.cells[1]?.textContent || "").toLowerCase();
-            var rolFila  = (fila.cells[3]?.textContent || "").toLowerCase();
+            var rolFila  = (fila.cells[2]?.textContent || "").toLowerCase();
 
             var coincideTexto = nombre.includes(texto) || username.includes(texto);
             var coincideRol   = rol === "" || rolFila.includes(rol);

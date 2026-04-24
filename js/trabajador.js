@@ -1,7 +1,7 @@
 // Secciones de la página
 var titulosPagina = {
     solicitudes:    'Solicitudes',
-    'mis-asignaciones': 'Mis Asignaciones',
+    'mis-asignaciones': 'Solicitudes Aceptadas',
     reporte:        'Reporte de Solicitud',
     notificaciones: 'Notificaciones'
 };
