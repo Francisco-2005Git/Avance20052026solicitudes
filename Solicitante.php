@@ -15,14 +15,16 @@ unset($_SESSION["exito"], $_SESSION["error"]);
 require_once "php/conexion.php";
 
 $stmtSolicitudes = $conexion->prepare(
-    "SELECT s.id_sol, s.encabezado, s.prioridad, s.fecha_creacion, s.fecha_limite,
+    "SELECT s.id_sol, s.encabezado, s.prioridad, s.fecha_creacion, s.fecha_limite, s.id_estado,
             e.nombre AS estado, ar.nombre AS area,
-            a.fecha_fin AS fecha_fin_asignacion
+            a.fecha_fin AS fecha_fin_asignacion,
+            b.id_bit, b.evidencia
      FROM solicitud s
      JOIN estado_solicitud e ON s.id_estado = e.id_estado
      JOIN area ar ON s.id_area = ar.id_area
-     LEFT JOIN asignacion a ON a.id_sol = s.id_sol
-                            AND a.estado_asignacion = 'activa'
+     LEFT JOIN asignacion a ON a.id_sol = s.id_sol AND a.estado_asignacion = 'activa'
+     LEFT JOIN bitacora b ON b.id_sol = s.id_sol
+         AND b.id_bit = (SELECT MAX(id_bit) FROM bitacora WHERE id_sol = s.id_sol)
      WHERE s.id_us = ?
      ORDER BY s.fecha_creacion DESC"
 );
@@ -259,20 +261,27 @@ $stmtAsignaciones->close();
                                                     'baja'  => 'etiqueta-baja',
                                                     default => ''
                                                 };
-                                                $claseEstado = match(strtolower($s->estado)) {
-                                                    'pendiente'  => 'etiqueta-pendiente',
-                                                    'en proceso' => 'etiqueta-proceso',
-                                                    default      => ''
+                                                $claseEstado = match($s->id_estado) {
+                                                    1 => 'etiqueta-pendiente',
+                                                    2 => 'etiqueta-proceso',
+                                                    4 => 'etiqueta-pendiente',
+                                                    5 => 'etiqueta-cancelada',
+                                                    default => ''
                                                 };
-                                                $puntoEstado = match(strtolower($s->estado)) {
-                                                    'pendiente'  => 'pendiente',
-                                                    'en proceso' => 'proceso',
-                                                    default      => ''
+                                                $puntoEstado = match($s->id_estado) {
+                                                    1 => 'pendiente',
+                                                    2 => 'proceso',
+                                                    default => ''
                                                 };
-                                                $fecha = date("d/m/Y", strtotime($s->fecha_creacion));
+                                                $fecha = date("d/m/Y H:i:s", strtotime($s->fecha_creacion));
                                                 $fechalimite = $s->fecha_fin_asignacion
-                                                    ? date("d/m/Y", strtotime($s->fecha_fin_asignacion))
-                                                    : date("d/m/Y", strtotime($s->fecha_limite));
+                                                    ? date("d/m/Y H:i:s", strtotime($s->fecha_fin_asignacion))
+                                                    : date("d/m/Y H:i:s", strtotime($s->fecha_limite));
+                                                $pdfPath = null;
+                                                if ($s->id_estado == 4 && $s->evidencia) {
+                                                    $carpeta = dirname(explode(',', $s->evidencia)[0]);
+                                                    $pdfPath = $carpeta . '/reporte_' . $s->id_bit . '.pdf';
+                                                }
                                             ?>
                                             <tr>
                                                 <td><span class="texto-apagado texto-xs">#<?= $s->id_sol ?></span></td>
@@ -288,12 +297,22 @@ $stmtAsignaciones->close();
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <?php if (strtolower($s->estado) === 'en revisión'): ?>
-                                                        <form action="php/controlador_solicitud.php" method="POST">
-                                                            <input type="hidden" name="accion" value="aprobar">
-                                                            <input type="hidden" name="id_sol" value="<?= $s->id_sol ?>">
-                                                            <button type="submit" class="btn btn-exito btn-pequeno">Aprobar</button>
-                                                        </form>
+                                                    <?php if ($s->id_estado == 4): ?>
+                                                        <div style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">
+                                                            <?php if ($pdfPath): ?>
+                                                                <a href="<?= htmlspecialchars($pdfPath) ?>" target="_blank"
+                                                                   class="btn btn-fantasma btn-pequeno">Ver PDF</a>
+                                                            <?php endif; ?>
+                                                            <form action="php/controlador_solicitud.php" method="POST" style="margin:0;">
+                                                                <input type="hidden" name="accion" value="aprobar">
+                                                                <input type="hidden" name="id_sol" value="<?= $s->id_sol ?>">
+                                                                <button type="submit" class="btn btn-exito btn-pequeno">Aprobar</button>
+                                                            </form>
+                                                            <button class="btn btn-peligro btn-pequeno"
+                                                                    onclick="abrirModalRechazo(<?= $s->id_sol ?>)">Rechazar</button>
+                                                        </div>
+                                                    <?php elseif ($s->id_estado == 5): ?>
+                                                        <span class="texto-apagado texto-xs">Esperando reenvío...</span>
                                                     <?php else: ?>
                                                         <span class="texto-apagado texto-xs">—</span>
                                                     <?php endif; ?>
@@ -345,10 +364,10 @@ $stmtAsignaciones->close();
                                                     'baja'  => 'etiqueta-baja',
                                                     default => ''
                                                 };
-                                                $fecha = date("d/m/Y", strtotime($s->fecha_creacion));
+                                                $fecha = date("d/m/Y H:i:s", strtotime($s->fecha_creacion));
                                                 $fechalimite = $s->fecha_fin_asignacion
-                                                    ? date("d/m/Y", strtotime($s->fecha_fin_asignacion))
-                                                    : date("d/m/Y", strtotime($s->fecha_limite));
+                                                    ? date("d/m/Y H:i:s", strtotime($s->fecha_fin_asignacion))
+                                                    : date("d/m/Y H:i:s", strtotime($s->fecha_limite));
                                             ?>
                                             <tr>
                                                 <td><span class="texto-apagado texto-xs">#<?= $s->id_sol ?></span></td>
@@ -390,7 +409,47 @@ $stmtAsignaciones->close();
         </div>
     </div>
 
+    <!-- MODAL: RECHAZAR REPORTE -->
+    <div id="modalRechazo" class="fondo-modal">
+        <div class="modal" style="max-width:440px;">
+            <div class="modal-encabezado">
+                <div class="modal-titulo">Rechazar Reporte</div>
+                <button class="modal-cerrar" onclick="cerrarModalRechazo()">✕</button>
+            </div>
+            <div class="modal-divisor"></div>
+            <p style="font-size:13px; color:#4d5a7a; margin-bottom:16px;">
+                Indica el motivo del rechazo. El trabajador recibirá esta razón y deberá enviar un nuevo reporte.
+            </p>
+            <form id="formRechazo" method="POST" action="php/controlador_solicitud.php">
+                <input type="hidden" name="accion" value="rechazar">
+                <input type="hidden" name="id_sol" id="rechazo-id-sol">
+                <div class="grupo-form">
+                    <label class="etiqueta-form" for="razon-rechazo">Motivo del rechazo</label>
+                    <textarea class="campo-form" id="razon-rechazo" name="razon" rows="4"
+                        placeholder="Describe por qué rechazas este reporte..." required></textarea>
+                </div>
+                <div class="modal-pie">
+                    <button type="submit" class="btn btn-peligro">Confirmar Rechazo</button>
+                    <button type="button" class="btn btn-fantasma" onclick="cerrarModalRechazo()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="js/comun.js"></script>
     <script src="js/usuarios.js"></script>
+    <script>
+        function abrirModalRechazo(idSol) {
+            document.getElementById('rechazo-id-sol').value = idSol;
+            document.getElementById('modalRechazo').classList.add('abierto');
+        }
+        function cerrarModalRechazo() {
+            document.getElementById('modalRechazo').classList.remove('abierto');
+            document.getElementById('razon-rechazo').value = '';
+        }
+        document.getElementById('modalRechazo').addEventListener('click', function(e) {
+            if (e.target === this) cerrarModalRechazo();
+        });
+    </script>
 </body>
 </html>

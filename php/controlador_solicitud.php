@@ -7,6 +7,15 @@ if (empty($_SESSION["id"]) || !is_numeric($_SESSION["id"]) || $_SESSION["id_rol"
 
 require_once "conexion.php";
 
+function eliminarCarpetaRecursiva(string $dir): void {
+    if (!is_dir($dir)) return;
+    foreach (array_diff(scandir($dir), ['.', '..']) as $item) {
+        $ruta = "$dir/$item";
+        is_dir($ruta) ? eliminarCarpetaRecursiva($ruta) : unlink($ruta);
+    }
+    rmdir($dir);
+}
+
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $accion = $_POST["accion"] ?? "crear";
 
@@ -14,7 +23,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $id_sol = (int)($_POST["id_sol"] ?? 0);
         $id_us  = $_SESSION["id"];
 
-        // Verificar que la solicitud pertenece al solicitante y está en revisión
         $stmtCheck = $conexion->prepare(
             "SELECT id_sol FROM solicitud WHERE id_sol = ? AND id_us = ? AND id_estado = 4"
         );
@@ -30,7 +38,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
         $stmtCheck->close();
 
-        // Marcar bitacora como aprobada
         $stmtBit = $conexion->prepare(
             "UPDATE bitacora SET aprobado = true WHERE id_sol = ?"
         );
@@ -48,6 +55,75 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $stmtAsg->close();
 
         $_SESSION["exito"] = "Solicitud aprobada y finalizada.";
+        header("Location: ../Solicitante.php");
+        exit();
+    }
+
+    if ($accion === "rechazar") {
+        $id_sol = (int)($_POST["id_sol"] ?? 0);
+        $razon  = trim($_POST["razon"]   ?? "");
+        $id_us  = $_SESSION["id"];
+
+        if ($id_sol < 1 || empty($razon)) {
+            $_SESSION["error"] = "Debes indicar el motivo del rechazo.";
+            header("Location: ../Solicitante.php");
+            exit();
+        }
+
+        // Verificar que la solicitud pertenece al solicitante y está en revisión
+        $stmtCheck = $conexion->prepare(
+            "SELECT id_sol FROM solicitud WHERE id_sol = ? AND id_us = ? AND id_estado = 4"
+        );
+        $stmtCheck->bind_param("ii", $id_sol, $id_us);
+        $stmtCheck->execute();
+        $stmtCheck->store_result();
+
+        if ($stmtCheck->num_rows === 0) {
+            $stmtCheck->close();
+            $_SESSION["error"] = "No se puede rechazar esta solicitud.";
+            header("Location: ../Solicitante.php");
+            exit();
+        }
+        $stmtCheck->close();
+
+        // Obtener la entrada de bitácora actual (la más reciente sin razon_rechazo)
+        $stmtBit = $conexion->prepare(
+            "SELECT id_bit, evidencia FROM bitacora
+             WHERE id_sol = ? AND razon_rechazo IS NULL
+             ORDER BY id_bit DESC LIMIT 1"
+        );
+        $stmtBit->bind_param("i", $id_sol);
+        $stmtBit->execute();
+        $bitRow = $stmtBit->get_result()->fetch_object();
+        $stmtBit->close();
+
+        // Eliminar carpeta de evidencias (imágenes + PDF)
+        if ($bitRow && $bitRow->evidencia) {
+            $primeraRuta = explode(',', $bitRow->evidencia)[0];
+            $carpetaRel  = dirname(trim($primeraRuta));
+            $carpetaAbs  = __DIR__ . '/../' . $carpetaRel;
+            eliminarCarpetaRecursiva($carpetaAbs);
+        }
+
+        // Guardar razón de rechazo y limpiar evidencia (archivos ya eliminados)
+        if ($bitRow) {
+            $stmtUpd = $conexion->prepare(
+                "UPDATE bitacora SET razon_rechazo = ?, evidencia = NULL WHERE id_bit = ?"
+            );
+            $stmtUpd->bind_param("si", $razon, $bitRow->id_bit);
+            $stmtUpd->execute();
+            $stmtUpd->close();
+        }
+
+        // Cambiar estado a "Reporte Rechazado" (id_estado = 5)
+        $stmtSol = $conexion->prepare(
+            "UPDATE solicitud SET id_estado = 5 WHERE id_sol = ?"
+        );
+        $stmtSol->bind_param("i", $id_sol);
+        $stmtSol->execute();
+        $stmtSol->close();
+
+        $_SESSION["exito"] = "Reporte rechazado. El trabajador deberá enviar uno nuevo.";
         header("Location: ../Solicitante.php");
         exit();
     }
@@ -76,7 +152,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         exit();
     }
 
-    // id_estado queda en 1 = Pendiente por defecto
     $stmt = $conexion->prepare(
         "INSERT INTO solicitud (id_us, id_area, encabezado, descripcion, prioridad)
          VALUES (?, ?, ?, ?, ?)"
