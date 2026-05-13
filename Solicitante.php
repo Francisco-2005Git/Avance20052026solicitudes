@@ -60,6 +60,16 @@ $stmtAsignaciones->execute();
 $asignaciones = $stmtAsignaciones->get_result();
 $totalAsignaciones = $asignaciones->num_rows;
 $stmtAsignaciones->close();
+
+$stmtNotifs = $conexion->prepare(
+    "SELECT id_not, mensaje, fecha_envio FROM notificacion
+     WHERE id_us = ? ORDER BY fecha_envio DESC LIMIT 30"
+);
+$stmtNotifs->bind_param("i", $_SESSION["id"]);
+$stmtNotifs->execute();
+$notificaciones = $stmtNotifs->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmtNotifs->close();
+$totalNotifs = count($notificaciones);
 ?>
 
 <!-- HTML -->
@@ -105,7 +115,6 @@ $stmtAsignaciones->close();
                     <span class="nav-contador"><?= count($listaActivas) ?></span>
                 <?php endif; ?>
             </a>
-            <a href="#" class="nav-link nav-item" data-section="notificaciones">Notificaciones</a>
         </nav>
 
         <div class="sidebar-pie">
@@ -121,6 +130,34 @@ $stmtAsignaciones->close();
             <div>
                 <div class="topbar-titulo" id="topbar-titulo">Nueva Solicitud</div>
                 <div class="topbar-subtitulo">Instituto Tecnológico Superior de Rioverde</div>
+            </div>
+            <div class="notif-contenedor">
+                <button class="notif-boton" id="notif-boton" onclick="toggleNotificaciones()" title="Notificaciones">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    <?php if ($totalNotifs > 0): ?>
+                        <span class="notif-badge"><?= $totalNotifs ?></span>
+                    <?php endif; ?>
+                </button>
+                <div class="notif-panel" id="notif-panel">
+                    <div class="notif-panel-encabezado">Notificaciones</div>
+                    <div class="notif-lista">
+                        <?php if (empty($notificaciones)): ?>
+                            <div class="notif-vacio">Sin notificaciones nuevas</div>
+                        <?php else: ?>
+                            <?php foreach ($notificaciones as $n): ?>
+                                <div class="notif-item" id="notif-<?= $n['id_not'] ?>">
+                                    <div class="notif-mensaje"><?= htmlspecialchars($n['mensaje']) ?></div>
+                                    <div class="notif-meta">
+                                        <span class="notif-fecha"><?= date('d/m/Y H:i', strtotime($n['fecha_envio'])) ?></span>
+                                        <button class="notif-eliminar" onclick="eliminarNotificacion(<?= $n['id_not'] ?>)" title="Eliminar">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </div>
         </header>
 
@@ -143,9 +180,9 @@ $stmtAsignaciones->close();
                         <form action="php/controlador_solicitud.php" method="POST">
 
                             <div class="grupo-form">
-                                <label class="etiqueta-form" for="titulo">Título de la solicitud</label>
+                                <label class="etiqueta-form" for="titulo">Título de la solicitud <small class="contador-chars"></small></label>
                                 <input class="campo-form" type="text" id="titulo" name="titulo"
-                                    placeholder="Ej: Equipo sin acceso a red" required>
+                                    placeholder="Ej: Equipo sin acceso a red" maxlength="50" required>
                             </div>
 
                             <!--  red (grid) con dos columnas. Una  para Área y otra para Prioridad -->
@@ -189,9 +226,10 @@ $stmtAsignaciones->close();
                             </div>
 
                             <div class="grupo-form">
-                                <label class="etiqueta-form" for="descripcion">Descripción detallada</label>
+                                <label class="etiqueta-form" for="descripcion">Descripción detallada <small class="contador-chars"></small></label>
                                 <textarea class="campo-form" id="descripcion" name="descripcion"
-                                        rows="5" placeholder="Describe el problema con el mayor detalle posible" required></textarea>
+                                        rows="5" placeholder="Describe el problema con el mayor detalle posible"
+                                        maxlength="120" required></textarea>
                             </div>
 
                             <button type="submit" class="btn btn-primario w-full"
@@ -394,17 +432,7 @@ $stmtAsignaciones->close();
                 </div>
             </div>
 
-            <!-- NOTIFICACIONES -->
-            <div id="notificaciones" class="section" style="display:none;">
-                <div class="tarjeta" style="max-width:600px;">
-                    <div class="tarjeta-encabezado">
-                        <div class="tarjeta-titulo">Notificaciones</div>
-                    </div>
-                    <div class="tarjeta-cuerpo">
-                        <p>Aquí aparecerán las notificaciones</p>
-                    </div>
-                </div>
-            </div>
+
 
         </div>
     </div>
@@ -438,6 +466,7 @@ $stmtAsignaciones->close();
 
     <script src="js/comun.js"></script>
     <script src="js/usuarios.js"></script>
+    <script>inicializarContadores();</script>
     <script>
         function abrirModalRechazo(idSol) {
             document.getElementById('rechazo-id-sol').value = idSol;

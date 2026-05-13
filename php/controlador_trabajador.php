@@ -59,6 +59,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && !empty($_POST["accion"])) {
             $stmtAsignacion->bind_param("iis", $id_sol, $id_trabajador, $fechaFin);
             $stmtAsignacion->execute();
             $stmtAsignacion->close();
+            require_once __DIR__ . '/correo.php';
+            require_once __DIR__ . '/notificaciones.php';
+            correoSolicitudAceptada($conexion, $id_sol);
+            notifSolicitudAceptada($conexion, $id_sol);
             $_SESSION["exito"] = "Solicitud aceptada y asignada correctamente.";
         } catch (mysqli_sql_exception $e) {
             // El trigger rechazó la asignación: la solicitud ya fue tomada por otro trabajador
@@ -80,12 +84,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && !empty($_POST["accion"])) {
         $errores     = [];
         $fotosSubidas = array_filter($_FILES["fotos"]["name"] ?? [], fn($n) => $n !== "");
 
-        if ($id_sol < 1)                          $errores[] = "Debes seleccionar una solicitud.";
-        if (empty($encabezado))                   $errores[] = "El título es obligatorio.";
-        if (strlen($descripcion_problema) <= 10)  $errores[] = "La descripción del problema debe tener más de 10 caracteres.";
-        if (strlen($descripcion_solucion) <= 10)  $errores[] = "La descripción de la solución debe tener más de 10 caracteres.";
+        if ($id_sol < 1)                           $errores[] = "Debes seleccionar una solicitud.";
+        if (empty($encabezado))                    $errores[] = "El título es obligatorio.";
+        elseif (strlen($encabezado) > 50)          $errores[] = "El título no puede exceder 50 caracteres.";
+        if (strlen($descripcion_problema) <= 10)   $errores[] = "La descripción del problema debe tener más de 10 caracteres.";
+        elseif (strlen($descripcion_problema) > 120) $errores[] = "La descripción del problema no puede exceder 120 caracteres.";
+        if (strlen($descripcion_solucion) <= 10)   $errores[] = "La descripción de la solución debe tener más de 10 caracteres.";
+        elseif (strlen($descripcion_solucion) > 120) $errores[] = "La descripción de la solución no puede exceder 120 caracteres.";
         if (count($fotosSubidas) === 0)            $errores[] = "Debes subir al menos 1 fotografía como evidencia.";
-        if (count($fotosSubidas) > 3)             $errores[] = "Solo se permiten hasta 3 fotografías.";
+        if (count($fotosSubidas) > 3)              $errores[] = "Solo se permiten hasta 3 fotografías.";
 
         if (!empty($errores)) {
             $_SESSION["error"]          = implode(" | ", $errores);
@@ -170,6 +177,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && !empty($_POST["accion"])) {
         $stmtRevision->bind_param("i", $id_sol);
         $stmtRevision->execute();
         $stmtRevision->close();
+
+        require_once __DIR__ . '/correo.php';
+        require_once __DIR__ . '/notificaciones.php';
+        correoReporteEnviado($conexion, $id_sol);
+        notifReporteEnviado($conexion, $id_sol);
 
         $_SESSION["exito"] = "Reporte enviado. Esperando aprobación del solicitante.";
         header("Location: ../Trabajador.php");

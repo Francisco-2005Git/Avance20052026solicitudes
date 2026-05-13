@@ -45,6 +45,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $stmtBit->execute();
         $stmtBit->close();
 
+        // Notificar al trabajador antes de cambiar el estado de la asignación
+        require_once __DIR__ . '/correo.php';
+        require_once __DIR__ . '/notificaciones.php';
+        correoReporteAprobado($conexion, $id_sol);
+        notifReporteAprobado($conexion, $id_sol);
+
         // Completar asignación — dispara triggers finalizar_solicitud y liberar_trabajador
         $stmtAsg = $conexion->prepare(
             "UPDATE asignacion SET estado_asignacion = 'completada', fecha_fin = NOW()
@@ -123,6 +129,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $stmtSol->execute();
         $stmtSol->close();
 
+        require_once __DIR__ . '/correo.php';
+        require_once __DIR__ . '/notificaciones.php';
+        correoReporteRechazado($conexion, $id_sol, $razon);
+        notifReporteRechazado($conexion, $id_sol, $razon);
+
         $_SESSION["exito"] = "Reporte rechazado. El trabajador deberá enviar uno nuevo.";
         header("Location: ../Solicitante.php");
         exit();
@@ -138,9 +149,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $errores = [];
     if (empty($encabezado)) {
         $errores[] = "El título es obligatorio.";
+    } elseif (strlen($encabezado) > 50) {
+        $errores[] = "El título no puede exceder 50 caracteres.";
     }
     if (strlen($descripcion) <= 10) {
         $errores[] = "La descripción debe tener más de 10 caracteres.";
+    } elseif (strlen($descripcion) > 120) {
+        $errores[] = "La descripción no puede exceder 120 caracteres.";
     }
     if ($id_area < 1) {
         $errores[] = "Selecciona un área.";
@@ -159,7 +174,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $stmt->bind_param("iisss", $id_us, $id_area, $encabezado, $descripcion, $prioridad);
 
     if ($stmt->execute()) {
+        $id_sol_nuevo = $stmt->insert_id;
         $stmt->close();
+        require_once __DIR__ . '/correo.php';
+        require_once __DIR__ . '/notificaciones.php';
+        correoSolicitudCreada($conexion, $encabezado, $descripcion);
+        notifSolicitudCreada($conexion, $id_sol_nuevo, $encabezado);
         $_SESSION["exito"] = "Solicitud enviada correctamente.";
     } else {
         $errorMsg = $stmt->error;
