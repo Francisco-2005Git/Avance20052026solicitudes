@@ -81,11 +81,11 @@ INSERT INTO estado_solicitud (nombre)
 INSERT INTO estado_solicitud (nombre)
     VALUES ("En Proceso");
     
-INSERT INTO estado_solicitud (nombre) 
-	VALUES ('En Revisión');
-    
 INSERT INTO estado_solicitud (nombre)
     VALUES ("Finalizada");
+    
+INSERT INTO estado_solicitud (nombre) 
+	VALUES ('En Revisión');
 
 INSERT INTO estado_solicitud (nombre)
     VALUES ('Reporte Rechazado');

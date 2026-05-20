@@ -91,29 +91,46 @@ $estadosFiltro = $stmtEstados->fetch_all(MYSQLI_ASSOC);
             </div>
         </div>
 
-        <!-- La sección de los datos: Redirige a la sección correspondiente -->
         <nav class="sidebar-nav">
-            <div class="nav-etiqueta-seccion">Panel</div>
-            <a href="#" class="nav-link nav-item active" data-section="bitacora">Bitácora</a>
-            <a href="#" class="nav-link nav-item" data-section="generar-reporte">Generar Reporte</a>
-            <a href="#" class="nav-link nav-item" data-section="admin-usuarios">Administrar Usuarios</a>
+            <div class="nav-etiqueta-seccion">Bitácora</div>
+            <a href="#" class="nav-link nav-item active" data-section="bitacora">
+                <svg class="nav-icono" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                <span class="nav-texto">Bitácora</span>
+            </a>
+            <a href="#" class="nav-link nav-item" data-section="generar-reporte">
+                <svg class="nav-icono" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span class="nav-texto">Generar Reporte</span>
+            </a>
+            <div class="nav-etiqueta-seccion">Administración</div>
+            <a href="#" class="nav-link nav-item" data-section="admin-usuarios">
+                <svg class="nav-icono" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                <span class="nav-texto">Administrar Usuarios</span>
+            </a>
+            <a href="#" class="nav-link nav-item" data-section="admin-areas">
+                <svg class="nav-icono" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                <span class="nav-texto">Administrar Áreas</span>
+            </a>
         </nav>
 
-        <!-- El controlador PHP destruye la sesión antes de redirigir -->
         <div class="sidebar-pie">
             <a href="php/controlador_cerrar.php" class="btn-cerrar-sesion">
-                <span>❌</span> Cerrar Sesión
+                <svg class="nav-icono" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                <span class="nav-texto">Cerrar Sesión</span>
             </a>
         </div>
     </aside>
 
     <div class="contenido-principal">
 
-        <!-- El topbar se actualiza al navegar entre secciones -->
         <header class="topbar">
-            <div>
-                <div class="topbar-titulo" id="topbar-titulo">Bitácora</div>
-                <div class="topbar-subtitulo">Instituto Tecnológico Superior de Rioverde</div>
+            <div style="display:flex; align-items:center; gap:12px;">
+                <button class="btn-hamburguesa" onclick="toggleSidebar()" title="Menú">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                </button>
+                <div>
+                    <div class="topbar-titulo" id="topbar-titulo">Bitácora</div>
+                    <div class="topbar-subtitulo">Instituto Tecnológico Superior de Rioverde</div>
+                </div>
             </div>
         </header>
 
@@ -285,6 +302,18 @@ $estadosFiltro = $stmtEstados->fetch_all(MYSQLI_ASSOC);
                                 Generar Reporte PDF
                             </button>
                         </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADMINISTRAR ÁREAS -->
+            <div id="admin-areas" class="section" style="display:none;">
+                <div class="tarjeta">
+                    <div class="tarjeta-encabezado">
+                        <div class="tarjeta-titulo">Administrar Áreas</div>
+                    </div>
+                    <div class="tarjeta-cuerpo" style="padding:20px;">
+                        <p style="color:#8f98b2; font-size:14px;">Sección en construcción.</p>
                     </div>
                 </div>
             </div>

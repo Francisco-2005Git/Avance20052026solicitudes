@@ -16,12 +16,18 @@ function crearMailer(): PHPMailer {
     $mail->Password   = MAIL_PASSWORD;
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
     $mail->Port       = MAIL_PORT;
+    $mail->Timeout    = 5;
     $mail->CharSet    = 'UTF-8';
     $mail->setFrom(MAIL_FROM, MAIL_FROM_NAME);
     return $mail;
 }
 
 function enviarCorreo(string $destinatario, string $nombreDest, string $asunto, string $cuerpoHTML): bool {
+    if (true) return false; // DESACTIVADO — cambiar true por false para reactivar
+    $brevoKey = getenv('BREVO_API_KEY') ?: '';
+    if ($brevoKey !== '') {
+        return _enviarBrevo($brevoKey, $destinatario, $nombreDest, $asunto, $cuerpoHTML);
+    }
     try {
         $mail = crearMailer();
         $mail->addAddress($destinatario, $nombreDest);
@@ -31,10 +37,42 @@ function enviarCorreo(string $destinatario, string $nombreDest, string $asunto, 
         $mail->AltBody = strip_tags($cuerpoHTML);
         $mail->send();
         return true;
-    } catch (Exception $e) {
+    } catch (\Throwable $e) {
         error_log('[ITSRV-Correo] No enviado a ' . $destinatario . ': ' . $e->getMessage());
         return false;
     }
+}
+
+function _enviarBrevo(string $key, string $dest, string $nombre, string $asunto, string $html): bool {
+    $payload = json_encode([
+        'sender'      => ['name' => MAIL_FROM_NAME, 'email' => MAIL_FROM],
+        'to'          => [['email' => $dest, 'name' => $nombre]],
+        'subject'     => $asunto,
+        'htmlContent' => $html,
+    ]);
+
+    $ch = curl_init('https://api.brevo.com/v3/smtp/email');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => $payload,
+        CURLOPT_TIMEOUT        => 10,
+        CURLOPT_HTTPHEADER     => [
+            'api-key: ' . $key,
+            'Content-Type: application/json',
+        ],
+    ]);
+
+    $response = curl_exec($ch);
+    $code     = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $err      = curl_error($ch);
+    curl_close($ch);
+
+    if ($code !== 200 && $code !== 201) {
+        error_log('[ITSRV-Correo/Brevo] Error ' . $code . ' al enviar a ' . $dest . ': ' . ($err ?: $response));
+        return false;
+    }
+    return true;
 }
 
 function plantillaCorreo(string $titulo, string $cuerpo): string {

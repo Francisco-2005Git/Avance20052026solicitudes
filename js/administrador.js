@@ -1,7 +1,8 @@
 var titulosSecciones = {
     bitacora:          'Bitácora',
     'generar-reporte': 'Generar Reporte',
-    'admin-usuarios':  'Administrar Usuarios'
+    'admin-usuarios':  'Administrar Usuarios',
+    'admin-areas':     'Administrar Áreas'
 };
 
 inicializarNavegacion(titulosSecciones);

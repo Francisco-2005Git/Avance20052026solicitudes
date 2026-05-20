@@ -178,13 +178,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && !empty($_POST["accion"])) {
             "DELETE FROM usuario WHERE id_us = ? AND id_rol != 3"
         );
         $statement->bind_param("i", $id_us);
-        if ($statement->execute() && $statement->affected_rows > 0) {
-            $statement->close();
-            $_SESSION["exito"] = "Usuario eliminado correctamente.";
-        } else {
-            $statement->close();
-            $_SESSION["error"] = "No se pudo eliminar el usuario.";
+        try {
+            if ($statement->execute() && $statement->affected_rows > 0) {
+                $_SESSION["exito"] = "Usuario eliminado correctamente.";
+            } else {
+                $_SESSION["error"] = "No se pudo eliminar el usuario.";
+            }
+        } catch (mysqli_sql_exception $e) {
+            $_SESSION["error"] = "No se puede eliminar este usuario porque tiene solicitudes o asignaciones registradas en el sistema.";
         }
+        $statement->close();
         $_SESSION["seccion_activa"] = "admin-usuarios";
         header("Location: ../Administrador.php");
         exit();

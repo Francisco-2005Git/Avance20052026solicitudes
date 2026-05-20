@@ -41,6 +41,7 @@ input, select, textarea {
     flex: 1;
     display: flex;
     flex-direction: column;
+    transition: margin-left 0.25s ease;
     min-height: 100vh;
 }
 
@@ -55,6 +56,8 @@ input, select, textarea {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+    overflow-x: hidden;
+    transition: width 0.25s ease, transform 0.25s ease;
 }
 
 .sidebar-marca {
@@ -1002,23 +1005,86 @@ tbody tr:hover {
     .layout-crear       { grid-template-columns: 1fr; }
 }
 
+/* Overlay para el sidebar en móvil (creado por JS, estilos aquí) */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 250;
+}
+.sidebar-overlay.visible { display: block; }
+
 @media (max-width: 768px) {
+    /* Sidebar como panel deslizable sobre el contenido */
     .sidebar {
-        width: 100%;
-        position: relative;
+        transform: translateX(-100%);
+        z-index: 300;
     }
+    body.sidebar-movil-abierta .sidebar {
+        transform: translateX(0);
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Contenido siempre a ancho completo en móvil */
     .contenido-principal {
-        margin-left: 0;
+        margin-left: 0 !important;
     }
+
+    /* Espaciado interior reducido */
+    .cuerpo-pagina {
+        padding: 12px 10px;
+        gap: 12px;
+    }
+    .topbar {
+        padding: 0 12px;
+    }
+    .topbar-subtitulo {
+        display: none;
+    }
+
+    /* Formularios en columna única */
     .fila-form {
         grid-template-columns: 1fr;
     }
+
+    /* Encabezados de tarjeta flexibles */
+    .tarjeta-encabezado {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    /* Tarjetas de solicitud apiladas */
     .tarjeta-solicitud {
         flex-direction: column;
         align-items: flex-start;
     }
     .solicitud-acciones {
         width: 100%;
+        flex-wrap: wrap;
+    }
+
+    /* Barra de búsqueda flexible */
+    .campo-busqueda {
+        min-width: 0;
+        max-width: none;
+        flex: 1 1 0;
+    }
+
+    /* Panel de notificaciones acotado al viewport */
+    .notif-panel {
+        width: calc(100vw - 24px);
+        right: -8px;
+    }
+
+    /* Botones del pie del modal */
+    .modal-pie {
+        flex-wrap: wrap;
+    }
+
+    /* Modal interior */
+    .modal {
+        padding: 18px 16px;
     }
 }
 
@@ -1153,4 +1219,86 @@ tbody tr:hover {
 .notif-eliminar:hover {
     color: #e74c3c;
     background: #fef0f0;
+}
+
+/* ── Sidebar colapsable ─────────────────────────────────────── */
+.nav-icono {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    opacity: 0.7;
+}
+
+.nav-item:hover .nav-icono,
+.nav-item.active .nav-icono {
+    opacity: 1;
+}
+
+.btn-hamburguesa {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px 8px;
+    color: #64748b;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s;
+}
+
+.btn-hamburguesa:hover {
+    background: #f0f2f8;
+    color: #1a2340;
+}
+
+body.sidebar-colapsada .sidebar     { width: 56px; }
+body.sidebar-colapsada .contenido-principal { margin-left: 56px; }
+
+body.sidebar-colapsada .sidebar-marca {
+    padding: 14px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+body.sidebar-colapsada .marca-fila {
+    justify-content: center;
+    margin-bottom: 0;
+}
+
+body.sidebar-colapsada .marca-nombre,
+body.sidebar-colapsada .marca-subtitulo,
+body.sidebar-colapsada .usuario-pastilla,
+body.sidebar-colapsada .nav-etiqueta-seccion,
+body.sidebar-colapsada .nav-texto,
+body.sidebar-colapsada .nav-contador {
+    display: none !important;
+}
+
+body.sidebar-colapsada .sidebar-nav { padding: 10px 6px; }
+body.sidebar-colapsada .sidebar-pie { padding: 10px 6px; }
+
+body.sidebar-colapsada .nav-item {
+    justify-content: center;
+    padding: 10px;
+    gap: 0;
+}
+
+body.sidebar-colapsada .nav-icono {
+    width: 18px;
+    height: 18px;
+    opacity: 0.8;
+}
+
+body.sidebar-colapsada .nav-item:hover .nav-icono,
+body.sidebar-colapsada .nav-item.active .nav-icono {
+    opacity: 1;
+}
+
+body.sidebar-colapsada .btn-cerrar-sesion {
+    justify-content: center;
+    gap: 0;
+    padding: 10px;
 }

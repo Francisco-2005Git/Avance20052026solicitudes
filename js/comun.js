@@ -1,3 +1,53 @@
+// Sidebar colapsable / overlay móvil
+
+function cerrarSidebarMobile() {
+    document.body.classList.remove('sidebar-movil-abierta');
+    var ov = document.getElementById('sidebar-overlay');
+    if (ov) ov.classList.remove('visible');
+}
+
+function toggleSidebar() {
+    if (window.innerWidth <= 768) {
+        var abierta = document.body.classList.toggle('sidebar-movil-abierta');
+        if (abierta) document.body.classList.remove('sidebar-colapsada');
+        var ov = document.getElementById('sidebar-overlay');
+        if (ov) ov.classList.toggle('visible', abierta);
+    } else {
+        var colapsada = document.body.classList.toggle('sidebar-colapsada');
+        try { localStorage.setItem('sidebarColapsada', colapsada ? '1' : '0'); } catch (e) {}
+    }
+}
+
+(function () {
+    try {
+        if (window.innerWidth > 768 && localStorage.getItem('sidebarColapsada') === '1') {
+            document.body.classList.add('sidebar-colapsada');
+        }
+    } catch (e) {}
+
+    var ov = document.createElement('div');
+    ov.id        = 'sidebar-overlay';
+    ov.className = 'sidebar-overlay';
+    ov.onclick   = cerrarSidebarMobile;
+    document.body.appendChild(ov);
+
+    try {
+        window.matchMedia('(max-width: 768px)').addEventListener('change', function (e) {
+            if (e.matches) {
+                document.body.classList.remove('sidebar-colapsada');
+                cerrarSidebarMobile();
+            } else {
+                cerrarSidebarMobile();
+                try {
+                    if (localStorage.getItem('sidebarColapsada') === '1') {
+                        document.body.classList.add('sidebar-colapsada');
+                    }
+                } catch (e2) {}
+            }
+        });
+    } catch (e) {}
+})();
+
 // Navegación de secciones en las páginas.
 function navegarSeccion(idSeccion, titulosPagina) {
     document.querySelectorAll('.section').forEach(function(seccion) {
@@ -17,6 +67,8 @@ function navegarSeccion(idSeccion, titulosPagina) {
     if (topbarTitulo && titulosPagina) {
         topbarTitulo.textContent = titulosPagina[idSeccion] || '';
     }
+
+    cerrarSidebarMobile();
 }
 
 function inicializarContadores() {

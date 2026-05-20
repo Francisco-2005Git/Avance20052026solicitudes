@@ -116,24 +116,30 @@ $totalNotifs = count($notificaciones);
         <nav class="sidebar-nav">
             <div class="nav-etiqueta-seccion">Principal</div>
             <a href="#" class="nav-link nav-item active" data-section="solicitudes">
-                Solicitudes
+                <svg class="nav-icono" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+                <span class="nav-texto">Solicitudes</span>
                 <?php if ($totalSolicitudes > 0): ?>
                     <span class="nav-contador"><?= $totalSolicitudes ?></span>
                 <?php endif; ?>
             </a>
             <a href="#" class="nav-link nav-item" data-section="mis-asignaciones">
-                Solicitudes Aceptadas
+                <svg class="nav-icono" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span class="nav-texto">Solicitudes Aceptadas</span>
                 <?php $totalActivas = count($listaActivas) + count($listaRevision) + count($listaRechazadas); ?>
                 <?php if ($totalActivas > 0): ?>
                     <span class="nav-contador"><?= $totalActivas ?></span>
                 <?php endif; ?>
             </a>
-            <a href="#" class="nav-link nav-item" data-section="reporte">Reporte de Solicitud</a>
+            <a href="#" class="nav-link nav-item" data-section="reporte">
+                <svg class="nav-icono" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                <span class="nav-texto">Reporte de Solicitud</span>
+            </a>
         </nav>
 
         <div class="sidebar-pie">
             <a href="php/controlador_cerrar.php" class="btn-cerrar-sesion">
-                <span>❌</span> Cerrar Sesión
+                <svg class="nav-icono" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                <span class="nav-texto">Cerrar Sesión</span>
             </a>
         </div>
     </aside>
@@ -141,9 +147,14 @@ $totalNotifs = count($notificaciones);
     <div class="contenido-principal">
 
         <header class="topbar">
-            <div>
-                <div class="topbar-titulo" id="topbar-titulo">Solicitudes</div>
-                <div class="topbar-subtitulo">Instituto Tecnológico Superior de Rioverde</div>
+            <div style="display:flex; align-items:center; gap:12px;">
+                <button class="btn-hamburguesa" onclick="toggleSidebar()" title="Menú">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                </button>
+                <div>
+                    <div class="topbar-titulo" id="topbar-titulo">Solicitudes</div>
+                    <div class="topbar-subtitulo">Instituto Tecnológico Superior de Rioverde</div>
+                </div>
             </div>
             <div class="notif-contenedor">
                 <button class="notif-boton" id="notif-boton" onclick="toggleNotificaciones()" title="Notificaciones">
