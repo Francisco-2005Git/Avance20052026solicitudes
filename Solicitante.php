@@ -21,7 +21,7 @@ $stmtSolicitudes = $conexion->prepare(
             b.id_bit, b.evidencia
      FROM solicitud s
      JOIN estado_solicitud e ON s.id_estado = e.id_estado
-     JOIN area ar ON s.id_area = ar.id_area
+     RIGHT JOIN area ar ON s.id_area = ar.id_area
      LEFT JOIN asignacion a ON a.id_sol = s.id_sol AND a.estado_asignacion = 'activa'
      LEFT JOIN bitacora b ON b.id_sol = s.id_sol
          AND b.id_bit = (SELECT MAX(id_bit) FROM bitacora WHERE id_sol = s.id_sol)
