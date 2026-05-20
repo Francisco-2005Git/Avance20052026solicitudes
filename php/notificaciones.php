@@ -1,4 +1,10 @@
 <?php
+
+if (realpath(__FILE__) === realpath($_SERVER['SCRIPT_FILENAME'] ?? '')) {
+    header('Location: ../index.php');
+    exit;
+}
+
 function crearNotificacion(mysqli $db, int $id_us, ?int $id_sol, string $mensaje): void {
     $stmt = $db->prepare(
         "INSERT INTO notificacion (id_us, id_sol, mensaje) VALUES (?, ?, ?)"

@@ -1,4 +1,10 @@
 <?php
+
+if (realpath(__FILE__) === realpath($_SERVER['SCRIPT_FILENAME'] ?? '')) {
+    header('Location: ../index.php');
+    exit;
+}
+
 // Configuración SMTP para Gmail.
 // Genera la contraseña de aplicación en: https://myaccount.google.com/apppasswords
 // (requiere verificación en 2 pasos activada en tu cuenta Google)
