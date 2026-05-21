@@ -1,12 +1,9 @@
-<!-- PHP -->
 <?php
-//Comprobación de sesión
 session_start();
 if (empty($_SESSION["id"]) || !is_numeric($_SESSION["id"]) || $_SESSION["id_rol"] != 2) {
     header("Location: index.php");
     exit();
 }
-// Mensajes flash
 $msgExito      = $_SESSION["exito"]          ?? null;
 $msgError      = $_SESSION["error"]          ?? null;
 $seccionActiva = $_SESSION["seccion_activa"] ?? null;

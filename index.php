@@ -1,7 +1,3 @@
-<!-- Comentario temporal -->
-<!-- Usar crearADMIN.php después de crear la base de datos y poner los datos correctos en conexion.php -->
-<!-- Solo entonces será posible ingresar a crear más usuarios desde la interfaz del Administrador -->
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
