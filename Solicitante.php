@@ -68,6 +68,14 @@ $stmtNotifs->execute();
 $notificaciones = $stmtNotifs->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmtNotifs->close();
 $totalNotifs = count($notificaciones);
+
+// Estado inicial para polling
+$initFpRow      = $conexion->query(
+    "SELECT GROUP_CONCAT(CONCAT(id_sol,':',id_estado) ORDER BY id_sol) AS fp
+     FROM solicitud WHERE id_us = {$_SESSION['id']}"
+)->fetch_object();
+$initSolFp      = md5($initFpRow->fp ?? '');
+$initNotifMaxId = !empty($notificaciones) ? (int)max(array_column($notificaciones, 'id_not')) : 0;
 ?>
 
 <!-- HTML -->
@@ -261,6 +269,7 @@ $totalNotifs = count($notificaciones);
                         <button class="btn btn-primario btn-pequeno" onclick="navTo('crear')">Nueva solicitud</button>
                     </div>
 
+                    <div id="mis-sol-contenido">
                     <?php if ($totalSolicitudes === 0): ?>
                         <div class="tarjeta-cuerpo">
                             <p style="color:#8f98b2; text-align:center;">No tienes solicitudes registradas.</p>
@@ -437,6 +446,7 @@ $totalNotifs = count($notificaciones);
                         <?php endif; ?>
 
                     <?php endif; ?>
+                    </div><!-- /mis-sol-contenido -->
                 </div>
             </div>
 
@@ -474,7 +484,16 @@ $totalNotifs = count($notificaciones);
 
     <script src="js/comun.js"></script>
     <script src="js/usuarios.js"></script>
-    <script>inicializarContadores();</script>
+    <script src="js/polling.js"></script>
+    <script>
+        inicializarContadores();
+        iniciarPolling({
+            rol:        1,
+            notifMaxId: <?= $initNotifMaxId ?>,
+            solFp:      '<?= $initSolFp ?>',
+            solCount:   <?= $totalSolicitudes ?>
+        });
+    </script>
     <script>
         function abrirModalRechazo(idSol) {
             document.getElementById('rechazo-id-sol').value = idSol;

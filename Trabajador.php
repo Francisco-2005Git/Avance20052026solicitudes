@@ -74,6 +74,17 @@ $stmtNotifs->execute();
 $notificaciones = $stmtNotifs->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmtNotifs->close();
 $totalNotifs = count($notificaciones);
+
+// Estado inicial para polling
+$initSolMaxRow = $conexion->query("SELECT COALESCE(MAX(id_sol), 0) AS mx FROM solicitud WHERE id_estado = 1")->fetch_object();
+$initSolMaxId  = (int)$initSolMaxRow->mx;
+$initAsgFpRow  = $conexion->query(
+    "SELECT GROUP_CONCAT(CONCAT(a.id_asg,':',a.estado_asignacion,':',s.id_estado) ORDER BY a.id_asg) AS fp
+     FROM asignacion a JOIN solicitud s ON s.id_sol = a.id_sol
+     WHERE a.id_trabajador = {$_SESSION['id']} AND a.estado_asignacion != 'cancelada'"
+)->fetch_object();
+$initAsgFp      = md5($initAsgFpRow->fp ?? '');
+$initNotifMaxId = !empty($notificaciones) ? (int)max(array_column($notificaciones, 'id_not')) : 0;
 ?>
 
 <!-- HTML -->
@@ -200,7 +211,7 @@ $totalNotifs = count($notificaciones);
                         <div class="tarjeta-encabezado">
                             <div class="tarjeta-titulo">Solicitudes Disponibles</div>
                         </div>
-                        <div style="padding: 12px;">
+                        <div id="tablon-contenido" style="padding: 12px;">
                             <?php if ($totalSolicitudes === 0): ?>
                                 <p style="color:#8f98b2; text-align:center; padding:16px;">
                                     No hay solicitudes pendientes.
@@ -335,6 +346,7 @@ $totalNotifs = count($notificaciones);
                         <div class="tarjeta-titulo">Solicitudes Aceptadas</div>
                     </div>
 
+                    <div id="asignaciones-contenido">
                     <?php if ($totalAsignaciones === 0): ?>
                         <div class="tarjeta-cuerpo">
                             <p style="color:#8f98b2; text-align:center;">No tienes asignaciones activas.</p>
@@ -576,6 +588,7 @@ $totalNotifs = count($notificaciones);
                             </div>
                         <?php endif; ?>
                     <?php endif; ?>
+                    </div><!-- /asignaciones-contenido -->
                 </div>
             </div>
         </div>
@@ -583,7 +596,17 @@ $totalNotifs = count($notificaciones);
 
     <script src="js/comun.js"></script>
     <script src="js/trabajador.js"></script>
-    <script>inicializarContadores();</script>
+    <script src="js/polling.js"></script>
+    <script>
+        inicializarContadores();
+        iniciarPolling({
+            rol:        2,
+            notifMaxId: <?= $initNotifMaxId ?>,
+            solMaxId:   <?= $initSolMaxId ?>,
+            solCount:   <?= $totalSolicitudes ?>,
+            asgFp:      '<?= $initAsgFp ?>'
+        });
+    </script>
 
     <?php if ($seccionActiva): ?>
     <script>
