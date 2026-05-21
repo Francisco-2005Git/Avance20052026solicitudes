@@ -57,6 +57,29 @@ $stmtAreas   = $conexion->query("SELECT id_area, nombre FROM area ORDER BY nombr
 $areas       = $stmtAreas->fetch_all(MYSQLI_ASSOC);
 $stmtEstados = $conexion->query("SELECT id_estado, nombre FROM estado_solicitud ORDER BY id_estado ASC");
 $estadosFiltro = $stmtEstados->fetch_all(MYSQLI_ASSOC);
+
+// Áreas agrupadas por categoría
+$qAreasCat = $conexion->query(
+    "SELECT c.id_categoria, c.nombre AS cat_nombre,
+            a.id_area, a.nombre AS area_nombre
+     FROM categoria c
+     LEFT JOIN area a ON a.id_categoria = c.id_categoria
+     ORDER BY c.nombre ASC, a.nombre ASC"
+);
+$categorias = [];
+while ($row = $qAreasCat->fetch_object()) {
+    if (!isset($categorias[$row->id_categoria])) {
+        $categorias[$row->id_categoria] = ['nombre' => $row->cat_nombre, 'areas' => []];
+    }
+    if ($row->id_area !== null) {
+        $categorias[$row->id_categoria]['areas'][] = [
+            'id'     => $row->id_area,
+            'nombre' => $row->area_nombre,
+        ];
+    }
+}
+$qCatLista      = $conexion->query("SELECT id_categoria, nombre FROM categoria ORDER BY nombre ASC");
+$listaCategorias = $qCatLista->fetch_all(MYSQLI_ASSOC);
 ?>
 
 <!-- HTML -->
@@ -311,9 +334,47 @@ $estadosFiltro = $stmtEstados->fetch_all(MYSQLI_ASSOC);
                 <div class="tarjeta">
                     <div class="tarjeta-encabezado">
                         <div class="tarjeta-titulo">Administrar Áreas</div>
+                        <button class="btn btn-primario btn-pequeno" onclick="openAreaModal('add')">
+                            + Agregar Área
+                        </button>
                     </div>
-                    <div class="tarjeta-cuerpo" style="padding:20px;">
-                        <p style="color:#8f98b2; font-size:14px;">Sección en construcción.</p>
+                    <div class="contenedor-tabla">
+                        <table>
+                            <?php foreach ($categorias as $id_cat => $cat): ?>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="2" style="background:#f0f4f8; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#8f98b2; padding:8px 14px; border-bottom:1px solid #dde2ec;">
+                                            <?= htmlspecialchars($cat['nombre']) ?>
+                                        </td>
+                                    </tr>
+                                    <?php if (empty($cat['areas'])): ?>
+                                        <tr>
+                                            <td colspan="2" style="color:#8f98b2; font-size:13px; padding:10px 14px; font-style:italic;">
+                                                Sin áreas registradas en esta categoría.
+                                            </td>
+                                        </tr>
+                                    <?php else: ?>
+                                        <?php foreach ($cat['areas'] as $a): ?>
+                                            <tr>
+                                                <td><?= htmlspecialchars($a['nombre']) ?></td>
+                                                <td style="width:1px; white-space:nowrap;">
+                                                    <div class="acciones-tabla">
+                                                        <button class="btn btn-advertencia btn-pequeno"
+                                                                onclick="openAreaModal('edit', <?= $a['id'] ?>, <?= htmlspecialchars(json_encode($a['nombre'])) ?>, <?= $id_cat ?>)">
+                                                            Editar
+                                                        </button>
+                                                        <button class="btn btn-peligro btn-pequeno"
+                                                                onclick="deleteArea(<?= $a['id'] ?>, <?= htmlspecialchars(json_encode($a['nombre'])) ?>)">
+                                                            Eliminar
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </tbody>
+                            <?php endforeach; ?>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -479,6 +540,43 @@ $estadosFiltro = $stmtEstados->fetch_all(MYSQLI_ASSOC);
         navegarSeccion("<?= htmlspecialchars($seccionActiva) ?>", titulosSecciones);
     </script>
     <?php endif; ?>
+
+    <!-- MODAL: AGREGAR / EDITAR ÁREA -->
+    <div id="areaModal" class="fondo-modal">
+        <div class="modal" style="max-width:400px;">
+            <div class="modal-encabezado">
+                <div class="modal-titulo" id="area-modal-title">Agregar Área</div>
+                <button class="modal-cerrar" onclick="closeAreaModal()">✕</button>
+            </div>
+            <div class="modal-divisor"></div>
+            <form id="areaForm" method="POST" action="php/controlador_area.php">
+                <input type="hidden" name="accion" value="agregar">
+                <input type="hidden" name="id_area" id="area-id">
+
+                <div class="grupo-form">
+                    <label class="etiqueta-form" for="area-nombre">Nombre del Área</label>
+                    <input class="campo-form" type="text" id="area-nombre" name="nombre" maxlength="50" required>
+                </div>
+
+                <div class="grupo-form">
+                    <label class="etiqueta-form" for="area-categoria">Categoría</label>
+                    <select class="campo-form" id="area-categoria" name="id_categoria" required>
+                        <option value="" disabled selected>Seleccionar...</option>
+                        <?php foreach ($listaCategorias as $lc): ?>
+                            <option value="<?= $lc['id_categoria'] ?>">
+                                <?= htmlspecialchars($lc['nombre']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="modal-pie">
+                    <button type="submit" class="btn btn-primario">Guardar</button>
+                    <button type="button" class="btn btn-fantasma" onclick="closeAreaModal()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Modal: confirmación de generar reporte de período -->
     <div id="modalConfirmarReporte" class="fondo-modal">

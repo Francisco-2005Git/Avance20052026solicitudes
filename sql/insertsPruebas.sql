@@ -9,71 +9,40 @@ INSERT INTO rol (nombre)
 INSERT INTO rol (nombre)
     VALUES ("Administrador");
     
-INSERT INTO area (nombre)
-    VALUES ("Dirección General");
-    
-INSERT INTO area (nombre)
-    VALUES ("Dirección Académica");
-    
-INSERT INTO area (nombre)
-    VALUES ("Dirección de Vinculación");
-    
-INSERT INTO area (nombre)
-    VALUES ("Docencia");
-    
-INSERT INTO area (nombre)
-    VALUES ("Desarrollo Académico");
+INSERT INTO categoria (nombre) VALUES ("Académico");
+INSERT INTO categoria (nombre) VALUES ("Administrativo");
+INSERT INTO categoria (nombre) VALUES ("Dirección");
+INSERT INTO categoria (nombre) VALUES ("Jefaturas");
 
-INSERT INTO area (nombre)
-    VALUES ("Coordinación de Inglés");
+-- Dirección
+INSERT INTO area (nombre, id_categoria) SELECT "Dirección General",       id_categoria FROM categoria WHERE nombre = "Dirección";
+INSERT INTO area (nombre, id_categoria) SELECT "Dirección Académica",     id_categoria FROM categoria WHERE nombre = "Dirección";
+INSERT INTO area (nombre, id_categoria) SELECT "Dirección de Vinculación",id_categoria FROM categoria WHERE nombre = "Dirección";
 
-INSERT INTO area (nombre)
-    VALUES ("Biblioteca");
-    
-INSERT INTO area (nombre)
-    VALUES ("Titulación");
-    
-INSERT INTO area (nombre)
-    VALUES ("Psicopedagogía");
-    
-INSERT INTO area (nombre)
-    VALUES ("Cultura y Deportes");
-    
-INSERT INTO area (nombre)
-    VALUES ("Recursos Materiales");
-    
-INSERT INTO area (nombre)
-    VALUES ("Recursos Financieros");
-    
-INSERT INTO area (nombre)
-    VALUES ("Caja");
-    
-INSERT INTO area (nombre)
-    VALUES ("Planeación");
-    
-INSERT INTO area (nombre)
-    VALUES ("Calidad");
-    
-INSERT INTO area (nombre)
-    VALUES ("Transparencia");
-    
-INSERT INTO area (nombre)
-    VALUES ("Centro de Copiado");
-    
-INSERT INTO area (nombre)
-    VALUES ("Industrial");
-    
-INSERT INTO area (nombre)
-    VALUES ("Innovación Agrícola");
-    
-INSERT INTO area (nombre)
-    VALUES ("Informática");
-    
-INSERT INTO area (nombre)
-    VALUES ("Sistemas Computacionales");
-    
-INSERT INTO area (nombre)
-    VALUES ("Gestión Empresarial");
+-- Académico
+INSERT INTO area (nombre, id_categoria) SELECT "Docencia",                id_categoria FROM categoria WHERE nombre = "Académico";
+INSERT INTO area (nombre, id_categoria) SELECT "Desarrollo Académico",    id_categoria FROM categoria WHERE nombre = "Académico";
+INSERT INTO area (nombre, id_categoria) SELECT "Coordinación de Inglés",  id_categoria FROM categoria WHERE nombre = "Académico";
+INSERT INTO area (nombre, id_categoria) SELECT "Biblioteca",              id_categoria FROM categoria WHERE nombre = "Académico";
+INSERT INTO area (nombre, id_categoria) SELECT "Titulación",              id_categoria FROM categoria WHERE nombre = "Académico";
+INSERT INTO area (nombre, id_categoria) SELECT "Psicopedagogía",          id_categoria FROM categoria WHERE nombre = "Académico";
+INSERT INTO area (nombre, id_categoria) SELECT "Cultura y Deportes",      id_categoria FROM categoria WHERE nombre = "Académico";
+
+-- Administrativo
+INSERT INTO area (nombre, id_categoria) SELECT "Recursos Materiales",     id_categoria FROM categoria WHERE nombre = "Administrativo";
+INSERT INTO area (nombre, id_categoria) SELECT "Recursos Financieros",    id_categoria FROM categoria WHERE nombre = "Administrativo";
+INSERT INTO area (nombre, id_categoria) SELECT "Caja",                    id_categoria FROM categoria WHERE nombre = "Administrativo";
+INSERT INTO area (nombre, id_categoria) SELECT "Planeación",              id_categoria FROM categoria WHERE nombre = "Administrativo";
+INSERT INTO area (nombre, id_categoria) SELECT "Calidad",                 id_categoria FROM categoria WHERE nombre = "Administrativo";
+INSERT INTO area (nombre, id_categoria) SELECT "Transparencia",           id_categoria FROM categoria WHERE nombre = "Administrativo";
+INSERT INTO area (nombre, id_categoria) SELECT "Centro de Copiado",       id_categoria FROM categoria WHERE nombre = "Administrativo";
+
+-- Jefaturas
+INSERT INTO area (nombre, id_categoria) SELECT "Industrial",              id_categoria FROM categoria WHERE nombre = "Jefaturas";
+INSERT INTO area (nombre, id_categoria) SELECT "Innovación Agrícola",     id_categoria FROM categoria WHERE nombre = "Jefaturas";
+INSERT INTO area (nombre, id_categoria) SELECT "Informática",             id_categoria FROM categoria WHERE nombre = "Jefaturas";
+INSERT INTO area (nombre, id_categoria) SELECT "Sistemas Computacionales",id_categoria FROM categoria WHERE nombre = "Jefaturas";
+INSERT INTO area (nombre, id_categoria) SELECT "Gestión Empresarial",     id_categoria FROM categoria WHERE nombre = "Jefaturas";
     
 INSERT INTO estado_solicitud (nombre)
     VALUES ("Pendiente");

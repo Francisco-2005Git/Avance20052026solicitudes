@@ -200,3 +200,53 @@ function ejecutarGenerarReporte() {
     cerrarModalReporte();
     document.getElementById('form-reporte-periodo').submit();
 }
+
+// ── Modal de Áreas ────────────────────────────────────────────────────────────
+function openAreaModal(action, id, nombre, idCategoria) {
+    var title   = document.getElementById('area-modal-title');
+    var accion  = document.querySelector('#areaForm input[name="accion"]');
+    var inputId = document.getElementById('area-id');
+
+    if (action === 'add') {
+        title.textContent = 'Agregar Área';
+        accion.value      = 'agregar';
+        inputId.value     = '';
+        document.getElementById('area-nombre').value    = '';
+        document.getElementById('area-categoria').value = '';
+    } else {
+        title.textContent = 'Editar Área';
+        accion.value      = 'editar';
+        inputId.value     = id;
+        document.getElementById('area-nombre').value    = nombre    || '';
+        document.getElementById('area-categoria').value = idCategoria || '';
+    }
+
+    document.getElementById('areaModal').classList.add('abierto');
+}
+
+function closeAreaModal() {
+    document.getElementById('areaModal').classList.remove('abierto');
+}
+
+document.getElementById('areaModal').addEventListener('click', function (e) {
+    if (e.target === this) closeAreaModal();
+});
+
+function deleteArea(id, nombre) {
+    if (!confirm('¿Eliminar el área "' + nombre + '"? Esta acción no se puede deshacer.')) return;
+
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = 'php/controlador_area.php';
+
+    var fAccion = document.createElement('input');
+    fAccion.type = 'hidden'; fAccion.name = 'accion'; fAccion.value = 'eliminar';
+
+    var fId = document.createElement('input');
+    fId.type = 'hidden'; fId.name = 'id_area'; fId.value = id;
+
+    form.appendChild(fAccion);
+    form.appendChild(fId);
+    document.body.appendChild(form);
+    form.submit();
+}

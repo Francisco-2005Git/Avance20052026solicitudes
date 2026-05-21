@@ -8,11 +8,20 @@ create table rol(
     primary key(id_rol)
 );
 
+-- Tabla para agrupar las áreas por categoría
+create table categoria(
+    id_categoria int auto_increment,
+    nombre varchar(50) not null unique,
+    primary key(id_categoria)
+);
+
 -- Tabla para definir y almacenar las areas de la institucion
 create table area(
-    id_area int auto_increment,
-    nombre varchar(50) not null unique,
-    primary key(id_area)
+    id_area      int auto_increment,
+    nombre       varchar(50) not null unique,
+    id_categoria int not null,
+    primary key(id_area),
+    foreign key(id_categoria) references categoria(id_categoria)
 );
 
 -- Tabla que almacena los datos del usuario y, si corresponde, su rol y estado como trabajador.
