@@ -29,7 +29,6 @@ function crearMailer(): PHPMailer {
 }
 
 function enviarCorreo(string $destinatario, string $nombreDest, string $asunto, string $cuerpoHTML): bool {
-    if (true) return false; // DESACTIVADO — cambiar true por false para reactivar
     $brevoKey = getenv('BREVO_API_KEY') ?: '';
     if ($brevoKey !== '') {
         return _enviarBrevo($brevoKey, $destinatario, $nombreDest, $asunto, $cuerpoHTML);
