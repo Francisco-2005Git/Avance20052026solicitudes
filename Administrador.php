@@ -293,10 +293,13 @@ $listaCategorias = $qCatLista->fetch_all(MYSQLI_ASSOC);
                         <div class="tarjeta-titulo">Generar Reporte de Período</div>
                     </div>
                     <div class="tarjeta-cuerpo">
-                        <div style="background:#f0f2f8; border-radius:8px; padding:14px 16px; margin-bottom:20px;">
-                            <p style="font-size:13px; color:#4a5568; line-height:1.6; margin:0;">
-                                Genera un <strong>PDF con todos los reportes de soporte aprobados</strong> dentro del período seleccionado.
-                                El documento incluye: área, técnico responsable, nombre de la solicitud, fecha de aprobación y espacio para firma.
+                        <div style="background:#fdecea; border:1px solid #f5c2c2; border-radius:8px; padding:14px 16px; margin-bottom:20px;">
+                            <p style="font-size:13px; color:#7a2020; line-height:1.6; margin:0; text-align:justify;">
+                                <strong>⚠ Acción irreversible.</strong> Al generar el reporte, se descargará un PDF con
+                                el resumen estadístico y el listado completo de solicitudes del período.
+                                Inmediatamente después, <strong>todos los registros de solicitudes, asignaciones y bitácora
+                                serán eliminados</strong>, junto con los archivos de evidencia subidos al servidor.
+                                Actualiza la página tras la descarga para ver la bitácora limpia.
                             </p>
                         </div>
 

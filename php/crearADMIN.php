@@ -9,7 +9,7 @@ require_once "conexion.php";
 $nombre     = "Admin";
 $app        = "Principal";
 $apm        = null;
-$correo     = "admin@rioverde.tecnm.mx";  // Cambia esto al correo real del administrador
+$correo     = "admin@rioverde.tecnm.mx";
 $password   = "cebollines";
 $id_rol     = 3;
 $disponible = 1;

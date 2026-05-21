@@ -6,7 +6,6 @@ if (empty($_SESSION["id"]) || !is_numeric($_SESSION["id"]) || $_SESSION["id_rol"
 }
 
 require_once "conexion.php";
-
 date_default_timezone_set('America/Mexico_City');
 
 $fechaInicio = trim($_POST["fecha_inicio"] ?? "");
@@ -18,34 +17,31 @@ if (empty($fechaInicio) || empty($fechaFin)) {
     exit();
 }
 
-// Reportes aprobados dentro del rango (por fecha_fin de asignacion = fecha de aprobación)
-$stmt = $conexion->prepare(
-    "SELECT
-        ar.nombre                                        AS area,
-        CONCAT(u.nombre, ' ', u.app)                    AS trabajador,
-        s.encabezado                                     AS solicitud,
-        DATE_FORMAT(a.fecha_fin, '%d/%m/%Y %H:%i')      AS fecha_aprobacion
-     FROM bitacora b
-     JOIN solicitud s  ON s.id_sol        = b.id_sol
-     JOIN area ar      ON ar.id_area      = s.id_area
-     JOIN asignacion a ON a.id_sol        = s.id_sol
-                      AND a.estado_asignacion = 'completada'
-     JOIN usuario u    ON u.id_us         = a.id_trabajador
-     WHERE b.aprobado = 1
-       AND a.fecha_fin >= ?
-       AND a.fecha_fin <= ?
-     ORDER BY a.fecha_fin ASC"
-);
-$fechaFinFull = $fechaFin . " 23:59:59";
-$stmt->bind_param("ss", $fechaInicio, $fechaFinFull);
-$stmt->execute();
-$reportes = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-$stmt->close();
+// ── CONSULTAS ─────────────────────────────────────────────────────────────────
 
-// ── PDF ──────────────────────────────────────────────────────────────────────
+$totalRow = $conexion->query("SELECT COUNT(*) AS n FROM solicitud")->fetch_object();
+$total    = (int)($totalRow->n ?? 0);
+
+$solicitudes = $conexion->query(
+    "SELECT s.id_sol,
+            a.nombre  AS area,
+            IFNULL(CONCAT(uw.nombre,' ',uw.app), '—') AS trabajador,
+            s.encabezado,
+            DATE_FORMAT(s.fecha_creacion,'%d/%m/%Y') AS fecha
+     FROM solicitud s
+     JOIN area a ON a.id_area = s.id_area
+     LEFT JOIN asignacion asig ON asig.id_sol = s.id_sol
+         AND asig.estado_asignacion IN ('activa','completada')
+     LEFT JOIN usuario uw ON uw.id_us = asig.id_trabajador
+     ORDER BY s.fecha_creacion ASC"
+)->fetch_all(MYSQLI_ASSOC);
+
+// ── PDF ───────────────────────────────────────────────────────────────────────
 $fpdfPath = __DIR__ . '/../lib/fpdf/fpdf.php';
 if (!file_exists($fpdfPath)) {
-    die("FPDF no encontrado en $fpdfPath");
+    $_SESSION["error"] = "FPDF no encontrado en $fpdfPath.";
+    header("Location: ../Administrador.php");
+    exit();
 }
 require_once $fpdfPath;
 
@@ -60,21 +56,16 @@ $contentW = $pageW - $marginL - $marginR;   // 185.9 mm
 $fechaInicioFmt = date('d/m/Y', strtotime($fechaInicio));
 $fechaFinFmt    = date('d/m/Y', strtotime($fechaFin));
 $fechaHoy       = date('d/m/Y \a \l\a\s H:i:s');
-
-$pieTexto = $enc("ITSRV SOPORTEC — Reporte de Período Escolar — Generado el $fechaHoy");
+$pieTexto       = $enc("ITSRV SOPORTEC — Reporte de Período Escolar — Generado el $fechaHoy");
 
 $pdf = new class($pieTexto, $marginL, $marginR, $pageW) extends FPDF {
     public string $pieTexto;
-    public float  $mL;
-    public float  $mR;
-    public float  $pW;
+    public float  $mL, $mR, $pW;
 
     public function __construct(string $pie, float $mL, float $mR, float $pW) {
         parent::__construct('P', 'mm', 'Letter');
         $this->pieTexto = $pie;
-        $this->mL       = $mL;
-        $this->mR       = $mR;
-        $this->pW       = $pW;
+        $this->mL = $mL; $this->mR = $mR; $this->pW = $pW;
     }
 
     public function Footer(): void {
@@ -90,37 +81,31 @@ $pdf = new class($pieTexto, $marginL, $marginR, $pageW) extends FPDF {
 };
 
 $pdf->SetMargins($marginL, $marginT, $marginR);
-$pdf->SetAutoPageBreak(true, 20);
+$pdf->SetAutoPageBreak(true, 22);
 $pdf->AddPage();
 
-// ── CABECERA ─────────────────────────────────────────────────────────────────
+// ── CABECERA ──────────────────────────────────────────────────────────────────
 $logoPath = __DIR__ . '/../img/logo_tec_.png';
-$logoW    = 14;
-
 if (file_exists($logoPath)) {
-    $pdf->Image($logoPath, $marginL, $marginT, $logoW);
+    $pdf->Image($logoPath, $marginL, $marginT, 14);
 }
 
-// Nombre e institución a la derecha del logo
 $pdf->SetFont('Arial', 'B', 15);
 $pdf->SetTextColor(27, 85, 45);
-$pdf->SetXY($marginL + $logoW + 3, $marginT + 1);
+$pdf->SetXY($marginL + 17, $marginT + 1);
 $pdf->Cell(0, 7, $enc('ITSRV SOPORTEC'), 0, 1);
 
 $pdf->SetFont('Arial', '', 8.5);
 $pdf->SetTextColor(100, 100, 100);
-$pdf->SetX($marginL + $logoW + 3);
+$pdf->SetX($marginL + 17);
 $pdf->Cell(0, 5, $enc('Instituto Tecnológico Superior de Rioverde'), 0, 1);
 
 $pdf->Ln(4);
-
-// Línea divisoria verde
 $pdf->SetDrawColor(27, 85, 45);
 $pdf->SetLineWidth(0.5);
 $pdf->Line($marginL, $pdf->GetY(), $pageW - $marginR, $pdf->GetY());
 $pdf->Ln(5);
 
-// Título del documento
 $pdf->SetFont('Arial', 'B', 14);
 $pdf->SetTextColor(20, 20, 20);
 $pdf->Cell(0, 8, $enc('Reporte de Período Escolar'), 0, 1);
@@ -128,64 +113,84 @@ $pdf->Cell(0, 8, $enc('Reporte de Período Escolar'), 0, 1);
 $pdf->SetFont('Arial', '', 9);
 $pdf->SetTextColor(90, 90, 90);
 $pdf->Cell(0, 5, $enc("Período: $fechaInicioFmt  —  $fechaFinFmt"), 0, 1);
-$pdf->Cell(0, 5, $enc("Total de reportes aprobados: " . count($reportes)), 0, 1);
-$pdf->Ln(5);
+$pdf->Cell(0, 5, $enc("Total de solicitudes registradas: $total"), 0, 1);
+$pdf->Ln(6);
 
-// ── TABLA ────────────────────────────────────────────────────────────────────
-// Anchos de columna (total = 185.9 mm)
-$colW = [34, 42, 52, 27.9, 30];
-$colH = ['Area', 'Tecnico', 'Solicitud', 'Fecha de aprobacion', 'Firma'];
-$aln  = ['L',   'L',       'L',         'C',                   'C'];
+// ── TABLA DE SOLICITUDES ──────────────────────────────────────────────────────
+// Anchos: total 185.9 mm
+// #(10) | Área(36) | Técnico(40) | Nombre Solicitud(55) | Fecha(20) | Firma(24.9)
+$cW = [10, 36, 40, 55, 20, 24.9];
+$cH = ['#', $enc('Área'), $enc('Técnico'), $enc('Nombre de la Solicitud'), 'Fecha', 'Firma'];
+$cA = ['C', 'C', 'C', 'C', 'C', 'C'];
 
-// Fila de encabezado
 $pdf->SetFont('Arial', 'B', 9);
 $pdf->SetFillColor(27, 85, 45);
 $pdf->SetTextColor(255, 255, 255);
 $pdf->SetDrawColor(200, 200, 200);
 $pdf->SetLineWidth(0.2);
 
-$headers = [
-    $enc('Área'),
-    $enc('Técnico'),
-    $enc('Nombre de la Solicitud'),
-    $enc('Fecha'),
-    $enc('Firma'),
-];
-foreach ($headers as $i => $h) {
-    $pdf->Cell($colW[$i], 8, $h, 1, 0, 'C', true);
+foreach ($cH as $i => $h) {
+    $pdf->Cell($cW[$i], 8, $h, 1, 0, 'C', true);
 }
 $pdf->Ln();
 
-// Filas de datos
 $pdf->SetFont('Arial', '', 7.5);
 $pdf->SetTextColor(30, 30, 30);
-$fill = false;
 
-if (empty($reportes)) {
+if (empty($solicitudes)) {
     $pdf->SetFont('Arial', 'I', 9);
     $pdf->SetTextColor(130, 130, 130);
     $pdf->SetFillColor(250, 250, 250);
-    $pdf->Cell(array_sum($colW), 9,
-        $enc('No hay reportes aprobados en el período seleccionado.'), 1, 1, 'C', true);
+    $pdf->Cell(array_sum($cW), 9,
+        $enc('No hay solicitudes registradas en este período.'), 1, 1, 'C', true);
 } else {
-    foreach ($reportes as $r) {
+    $fill = false;
+    foreach ($solicitudes as $r) {
         $pdf->SetFillColor($fill ? 243 : 255, $fill ? 247 : 255, $fill ? 243 : 255);
         $valores = [
-            $enc($r['area']),
-            $enc($r['trabajador']),
-            $enc($r['solicitud']),
-            $enc($r['fecha_aprobacion']),
+            '#' . $r['id_sol'],
+            $r['area'],
+            $r['trabajador'],
+            $r['encabezado'],
+            $r['fecha'],
             '',
         ];
         foreach ($valores as $i => $v) {
-            $pdf->Cell($colW[$i], 8, $v, 1, 0, $aln[$i], true);
+            $pdf->Cell($cW[$i], 7, $enc($v), 1, 0, $cA[$i], true);
         }
         $pdf->Ln();
         $fill = !$fill;
     }
 }
 
-// ── SALIDA ───────────────────────────────────────────────────────────────────
-$nombre = "reporte-periodo_{$fechaInicio}_{$fechaFin}.pdf";
-$pdf->Output('D', $nombre);
+// Capturar PDF en memoria antes de modificar BD o archivos
+$pdfContent = $pdf->Output('S', '');
+
+// ── BORRAR UPLOADS ────────────────────────────────────────────────────────────
+$uploadsDir = realpath(__DIR__ . '/../uploads');
+if ($uploadsDir && is_dir($uploadsDir)) {
+    $iter = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($uploadsDir, RecursiveDirectoryIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::CHILD_FIRST
+    );
+    foreach ($iter as $info) {
+        if ($info->isFile())    @unlink($info->getRealPath());
+        elseif ($info->isDir()) @rmdir($info->getRealPath());
+    }
+}
+
+// ── RESETEAR BD ───────────────────────────────────────────────────────────────
+$conexion->query("SET FOREIGN_KEY_CHECKS=0");
+$conexion->query("TRUNCATE TABLE bitacora");
+$conexion->query("TRUNCATE TABLE notificacion");
+$conexion->query("TRUNCATE TABLE asignacion");
+$conexion->query("TRUNCATE TABLE solicitud");
+$conexion->query("SET FOREIGN_KEY_CHECKS=1");
+
+// ── ENVIAR PDF AL NAVEGADOR ───────────────────────────────────────────────────
+$filename = "reporte-periodo_{$fechaInicio}_{$fechaFin}.pdf";
+header('Content-Type: application/pdf');
+header('Content-Disposition: attachment; filename="' . $filename . '"');
+header('Content-Length: ' . strlen($pdfContent));
+echo $pdfContent;
 exit();
