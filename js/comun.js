@@ -50,6 +50,10 @@ function toggleSidebar() {
 
 // Navegación de secciones en las páginas.
 function navegarSeccion(idSeccion, titulosPagina) {
+    document.querySelectorAll('.fondo-modal').forEach(function(m) {
+        m.classList.remove('abierto');
+    });
+
     document.querySelectorAll('.section').forEach(function(seccion) {
         seccion.style.display = 'none';
     });
