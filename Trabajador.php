@@ -7,7 +7,8 @@ if (empty($_SESSION["id"]) || !is_numeric($_SESSION["id"]) || $_SESSION["id_rol"
 $msgExito      = $_SESSION["exito"]          ?? null;
 $msgError      = $_SESSION["error"]          ?? null;
 $seccionActiva = $_SESSION["seccion_activa"] ?? null;
-unset($_SESSION["exito"], $_SESSION["error"], $_SESSION["seccion_activa"]);
+$old           = $_SESSION["old"]            ?? [];
+unset($_SESSION["exito"], $_SESSION["error"], $_SESSION["seccion_activa"], $_SESSION["old"]);
 
 require_once "php/conexion.php";
 
@@ -309,21 +310,22 @@ $initNotifMaxId = !empty($notificaciones) ? (int)max(array_column($notificacione
                                     <label class="etiqueta-form" for="titulo-reporte">Título del reporte <small class="contador-chars"></small></label>
                                     <input class="campo-form" type="text" id="titulo-reporte"
                                         name="encabezado" placeholder="Ingresa el título de tu reporte"
-                                        maxlength="50" required>
+                                        maxlength="50" required
+                                        value="<?= htmlspecialchars($old['encabezado'] ?? '') ?>">
                                 </div>
 
                                 <div class="grupo-form">
                                     <label class="etiqueta-form" for="desc-problema">Descripción del problema <small class="contador-chars"></small></label>
                                     <textarea class="campo-form" id="desc-problema" name="descripcion_problema"
                                             rows="4" placeholder="Describe el problema detalladamente"
-                                            maxlength="120" required></textarea>
+                                            maxlength="120" required><?= htmlspecialchars($old['descripcion_problema'] ?? '') ?></textarea>
                                 </div>
 
                                 <div class="grupo-form">
                                     <label class="etiqueta-form" for="desc-solucion">Solución <small class="contador-chars"></small></label>
                                     <textarea class="campo-form" id="desc-solucion" name="descripcion_solucion"
                                             rows="4" placeholder="Describe la solución detalladamente"
-                                            maxlength="120" required></textarea>
+                                            maxlength="120" required><?= htmlspecialchars($old['descripcion_solucion'] ?? '') ?></textarea>
                                 </div>
 
                                 <div class="grupo-form">
@@ -606,6 +608,14 @@ $initNotifMaxId = !empty($notificaciones) ? (int)max(array_column($notificacione
             solCount:   <?= $totalSolicitudes ?>,
             asgFp:      '<?= $initAsgFp ?>'
         });
+        <?php if (!empty($old['id_sol'])): ?>
+        (function () {
+            var sel = document.getElementById('select-solicitud-reporte');
+            var hid = document.getElementById('input-id-sol-reporte');
+            if (sel) { sel.value = '<?= (int)$old['id_sol'] ?>'; }
+            if (hid) { hid.value = '<?= (int)$old['id_sol'] ?>'; }
+        })();
+        <?php endif; ?>
     </script>
 
     <?php if ($seccionActiva): ?>

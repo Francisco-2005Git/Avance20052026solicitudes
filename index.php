@@ -1,8 +1,3 @@
-<?php
-    session_start();
-    include "php/conexion.php";
-    include "php/controlador_login.php";
-?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -16,6 +11,11 @@
     <div class="login-contenedor">
         <!-- max-width 420px -->
         <div class="login-tarjeta">
+
+            <?php
+                include "php/conexion.php";
+                include "php/controlador_login.php";
+            ?>
 
             <div class="login-logo">
                 <div class="marca-emblema"><img src="img/logo_tec_.png" alt="logo del Instituto Tecnológico Superior de Rioverde" width="48"></div>
@@ -41,8 +41,10 @@
                 <div class="grupo-form">
                     <label class="etiqueta-form" for="password">Contraseña</label>
                     <div class="campo-c">
-                        <input class="campo-form" type="password" id="password" name="password" placeholder="••••••••" required>
-                        <button type="button" id="togglePass" class="btn-mostrar-contrasena">👁</button>
+                        <input class="campo-form" type="password" id="password" name="password" required>
+                        <button type="button" id="togglePass" class="btn-mostrar-contrasena" aria-label="Mostrar contraseña">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
                     </div>
                 </div>
                 <!-- input que funciona como botón. Envía los datos para su validación en la BD -->

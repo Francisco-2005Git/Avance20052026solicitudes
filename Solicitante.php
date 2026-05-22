@@ -8,7 +8,8 @@ if (empty($_SESSION["id"]) || !is_numeric($_SESSION["id"]) || $_SESSION["id_rol"
 // Mensajes flash
 $msgExito = $_SESSION["exito"] ?? null;
 $msgError = $_SESSION["error"] ?? null;
-unset($_SESSION["exito"], $_SESSION["error"]);
+$old      = $_SESSION["old"]   ?? [];
+unset($_SESSION["exito"], $_SESSION["error"], $_SESSION["old"]);
 
 require_once "php/conexion.php";
 
@@ -198,7 +199,8 @@ $initNotifMaxId = !empty($notificaciones) ? (int)max(array_column($notificacione
                             <div class="grupo-form">
                                 <label class="etiqueta-form" for="titulo">Título de la solicitud <small class="contador-chars"></small></label>
                                 <input class="campo-form" type="text" id="titulo" name="titulo"
-                                    placeholder="Ej: Equipo sin acceso a red" maxlength="50" required>
+                                    placeholder="Ej: Equipo sin acceso a red" maxlength="50" required
+                                    value="<?= htmlspecialchars($old['titulo'] ?? '') ?>">
                             </div>
 
                             <!--  red (grid) con dos columnas. Una  para Área y otra para Prioridad -->
@@ -245,7 +247,7 @@ $initNotifMaxId = !empty($notificaciones) ? (int)max(array_column($notificacione
                                 <label class="etiqueta-form" for="descripcion">Descripción detallada <small class="contador-chars"></small></label>
                                 <textarea class="campo-form" id="descripcion" name="descripcion"
                                         rows="5" placeholder="Describe el problema con el mayor detalle posible"
-                                        maxlength="120" required></textarea>
+                                        maxlength="120" required><?= htmlspecialchars($old['descripcion'] ?? '') ?></textarea>
                             </div>
 
                             <button type="submit" class="btn btn-primario w-full"
@@ -493,6 +495,9 @@ $initNotifMaxId = !empty($notificaciones) ? (int)max(array_column($notificacione
             solFp:      '<?= $initSolFp ?>',
             solCount:   <?= $totalSolicitudes ?>
         });
+        <?php if (!empty($old['id_area'])): ?>
+        document.getElementById('area').value = '<?= (int)$old['id_area'] ?>';
+        <?php endif; ?>
     </script>
     <script>
         function abrirModalRechazo(idSol) {

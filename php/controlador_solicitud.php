@@ -163,6 +163,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     if (!empty($errores)) {
         $_SESSION["error"] = implode(" | ", $errores);
+        $_SESSION["old"]   = [
+            'titulo'      => $encabezado,
+            'descripcion' => $descripcion,
+            'id_area'     => $_POST["id_area"] ?? '',
+        ];
         header("Location: ../Solicitante.php");
         exit();
     }

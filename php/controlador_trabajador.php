@@ -97,6 +97,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && !empty($_POST["accion"])) {
         if (!empty($errores)) {
             $_SESSION["error"]          = implode(" | ", $errores);
             $_SESSION["seccion_activa"] = "reporte";
+            $_SESSION["old"]            = [
+                'id_sol'               => $_POST["id_sol"]               ?? '',
+                'encabezado'           => $encabezado,
+                'descripcion_problema' => $descripcion_problema,
+                'descripcion_solucion' => $descripcion_solucion,
+            ];
             header("Location: ../Trabajador.php");
             exit();
         }

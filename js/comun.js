@@ -71,6 +71,14 @@ function navegarSeccion(idSeccion, titulosPagina) {
     cerrarSidebarMobile();
 }
 
+// Evita envíos duplicados: desactiva el botón submit tras el primer click
+document.addEventListener('submit', function (e) {
+    var btn = e.target.querySelector('button[type="submit"]');
+    if (!btn || btn.disabled) return;
+    btn.disabled = true;
+    btn.textContent = 'Enviando…';
+}, true);
+
 function inicializarContadores() {
     document.querySelectorAll('input[maxlength], textarea[maxlength]').forEach(function(el) {
         var grupo = el.closest('.grupo-form');
