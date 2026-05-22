@@ -170,7 +170,7 @@ $listaCategorias = $qCatLista->fetch_all(MYSQLI_ASSOC);
                 <div class="tarjeta">
                     <div class="tarjeta-encabezado">
                         <div class="tarjeta-titulo">Bitácora de solicitudes</div>
-                        <span class="texto-apagado" style="font-size:13px;"><?= count($registrosBitacora) ?> registro(s)</span>
+                        <span id="bitacora-contador" class="texto-apagado" style="font-size:13px;"><?= count($registrosBitacora) ?> registro(s)</span>
                     </div>
                     <div class="barra-herramientas">
                         <div class="campo-busqueda">
@@ -563,6 +563,7 @@ $listaCategorias = $qCatLista->fetch_all(MYSQLI_ASSOC);
     </div>
 
     <script src="js/comun.js"></script>
+    <script src="js/polling.js"></script>
     <script src="js/administrador.js"></script>
 
     <?php if ($seccionActiva): ?>
@@ -570,6 +571,26 @@ $listaCategorias = $qCatLista->fetch_all(MYSQLI_ASSOC);
         navegarSeccion("<?= htmlspecialchars($seccionActiva) ?>", titulosSecciones);
     </script>
     <?php endif; ?>
+
+    <?php
+    $bitFpRows = $conexion->query(
+        "SELECT GROUP_CONCAT(
+             CONCAT(s.id_sol,':',s.id_estado,':',COALESCE(b.id_bit,0),':',COALESCE(b.tipo_accion,''))
+             ORDER BY s.id_sol
+         ) AS fp
+         FROM solicitud s
+         LEFT JOIN bitacora b ON b.id_bit = (
+             SELECT MAX(id_bit) FROM bitacora WHERE id_sol = s.id_sol
+         )"
+    )->fetch_object();
+    $bitFp = md5($bitFpRows->fp ?? '');
+    $notifMaxId = (int)($conexion->query(
+        "SELECT COALESCE(MAX(id_not), 0) AS mx FROM notificacion WHERE id_us = " . (int)$_SESSION['id']
+    )->fetch_object()->mx ?? 0);
+    ?>
+    <script>
+        iniciarPolling({ rol: 3, notifMaxId: <?= $notifMaxId ?>, bitFp: '<?= $bitFp ?>' });
+    </script>
 
     <!-- MODAL: AGREGAR / EDITAR ÁREA -->
     <div id="areaModal" class="fondo-modal">

@@ -7,7 +7,8 @@
             solMaxId:   config.solMaxId   || 0,
             solCount:   config.solCount   || 0,
             solFp:      config.solFp      || '',
-            asgFp:      config.asgFp      || ''
+            asgFp:      config.asgFp      || '',
+            bitFp:      config.bitFp      || ''
         };
 
         function escHtml(s) {
@@ -118,6 +119,38 @@
                             estado.solCount = data.sol_count;
                             actualizarContadorNav('creadas', data.sol_activas);
                             refrescarSeccion('mis-sol-contenido', 'php/partial_mis_solicitudes.php');
+                        }
+                    }
+
+                    if (config.rol === 3) {
+                        if (data.bit_fingerprint !== estado.bitFp) {
+                            estado.bitFp = data.bit_fingerprint;
+                            fetch('php/partial_bitacora.php')
+                                .then(function (r) { return r.ok ? r.text() : Promise.reject(); })
+                                .then(function (html) {
+                                    var tbody = document.getElementById('tabla-bitacora');
+                                    if (!tbody) return;
+                                    // Preserve active filters by re-applying after refresh
+                                    tbody.innerHTML = html;
+                                    parpadear('tabla-bitacora');
+                                    // Update record count badge
+                                    var contadorEl = document.getElementById('bitacora-contador');
+                                    if (contadorEl) {
+                                        var filas = tbody.querySelectorAll('tr:not([id])');
+                                        var hayVacia = tbody.querySelector('td[colspan]');
+                                        contadorEl.textContent = hayVacia ? '0 registro(s)' : filas.length + ' registro(s)';
+                                    }
+                                    // Re-trigger filters if any are active
+                                    var evt = new Event('change');
+                                    var filtros = ['filtro-estado-bitacora', 'filtro-area-bitacora', 'filtro-tipo-bitacora'];
+                                    filtros.forEach(function (id) {
+                                        var el = document.getElementById(id);
+                                        if (el && el.value) el.dispatchEvent(evt);
+                                    });
+                                    var buscar = document.getElementById('buscar-bitacora');
+                                    if (buscar && buscar.value.trim()) buscar.dispatchEvent(new Event('input'));
+                                })
+                                .catch(function () {});
                         }
                     }
                 })

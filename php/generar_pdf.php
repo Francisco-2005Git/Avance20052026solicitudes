@@ -145,9 +145,14 @@ function generarReportePDF(array $datos, string $carpeta): void {
             $maxRowH = 0;
 
             foreach ($imagenes as $img) {
-                $h = min($imgW * $img['ratio'], $maxH);
+                $w = $imgW;
+                $h = $imgW * $img['ratio'];
+                if ($h > $maxH) {
+                    $h = $maxH;
+                    $w = $maxH / $img['ratio'];
+                }
                 $maxRowH = max($maxRowH, $h);
-                $pdf->Image($img['path'], $x, $y, $imgW, $h, $img['type']);
+                $pdf->Image($img['path'], $x, $y, $w, $h, $img['type']);
                 $x += $imgW + $gap;
             }
             $pdf->SetY($y + $maxRowH + 6);
