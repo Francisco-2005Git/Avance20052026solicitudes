@@ -184,34 +184,75 @@ if (empty($solicitudes)) {
     }
 }
 
-// Capturar PDF en memoria antes de modificar BD o archivos
+// Capturar PDF en memoria
 $pdfContent = $pdf->Output('S', '');
+$pdfFilename = "reporte-periodo_{$fechaInicio}_{$fechaFin}.pdf";
 
-// ── BORRAR UPLOADS ────────────────────────────────────────────────────────────
-$uploadsDir = realpath(__DIR__ . '/../uploads');
-if ($uploadsDir && is_dir($uploadsDir)) {
-    $iter = new RecursiveIteratorIterator(
-        new RecursiveDirectoryIterator($uploadsDir, RecursiveDirectoryIterator::SKIP_DOTS),
-        RecursiveIteratorIterator::CHILD_FIRST
-    );
-    foreach ($iter as $info) {
-        if ($info->isFile())    @unlink($info->getRealPath());
-        elseif ($info->isDir()) @rmdir($info->getRealPath());
+$limpiarBD = !empty($_POST['limpiar_bd']);
+
+if ($limpiarBD) {
+    // ── CREAR ZIP DE RESPALDO ─────────────────────────────────────────────────
+    $fechaInicioDisplay = date('d-m-Y', strtotime($fechaInicio));
+    $fechaFinDisplay    = date('d-m-Y', strtotime($fechaFin));
+    $nombreCarpeta      = "Respaldo del Período [{$fechaInicioDisplay}] a [{$fechaFinDisplay}]";
+
+    $zipTmp = tempnam(sys_get_temp_dir(), 'respaldo_') . '.zip';
+    $zip    = new ZipArchive();
+    $zip->open($zipTmp, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+
+    // PDF del reporte
+    $zip->addFromString("{$nombreCarpeta}/{$pdfFilename}", $pdfContent);
+
+    // Contenido de uploads/
+    $uploadsDir = realpath(__DIR__ . '/../uploads');
+    if ($uploadsDir && is_dir($uploadsDir)) {
+        $iter = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($uploadsDir, RecursiveDirectoryIterator::SKIP_DOTS)
+        );
+        foreach ($iter as $info) {
+            if ($info->isFile()) {
+                $rutaRel = substr($info->getRealPath(), strlen($uploadsDir) + 1);
+                $rutaRel = str_replace('\\', '/', $rutaRel);
+                $zip->addFile($info->getRealPath(), "{$nombreCarpeta}/uploads/{$rutaRel}");
+            }
+        }
     }
+    $zip->close();
+
+    // ── BORRAR UPLOADS ────────────────────────────────────────────────────────
+    if ($uploadsDir && is_dir($uploadsDir)) {
+        $iter = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($uploadsDir, RecursiveDirectoryIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST
+        );
+        foreach ($iter as $info) {
+            if ($info->isFile())    @unlink($info->getRealPath());
+            elseif ($info->isDir()) @rmdir($info->getRealPath());
+        }
+    }
+
+    // ── RESETEAR BD ──────────────────────────────────────────────────────────
+    $conexion->query("SET FOREIGN_KEY_CHECKS=0");
+    $conexion->query("TRUNCATE TABLE bitacora");
+    $conexion->query("TRUNCATE TABLE notificacion");
+    $conexion->query("TRUNCATE TABLE asignacion");
+    $conexion->query("TRUNCATE TABLE solicitud");
+    $conexion->query("SET FOREIGN_KEY_CHECKS=1");
+
+    // ── ENVIAR ZIP ────────────────────────────────────────────────────────────
+    $zipContent = file_get_contents($zipTmp);
+    @unlink($zipTmp);
+
+    header('Content-Type: application/zip');
+    header('Content-Disposition: attachment; filename="' . $nombreCarpeta . '.zip"');
+    header('Content-Length: ' . strlen($zipContent));
+    echo $zipContent;
+    exit();
 }
 
-// ── RESETEAR BD ───────────────────────────────────────────────────────────────
-$conexion->query("SET FOREIGN_KEY_CHECKS=0");
-$conexion->query("TRUNCATE TABLE bitacora");
-$conexion->query("TRUNCATE TABLE notificacion");
-$conexion->query("TRUNCATE TABLE asignacion");
-$conexion->query("TRUNCATE TABLE solicitud");
-$conexion->query("SET FOREIGN_KEY_CHECKS=1");
-
-// ── ENVIAR PDF AL NAVEGADOR ───────────────────────────────────────────────────
-$filename = "reporte-periodo_{$fechaInicio}_{$fechaFin}.pdf";
+// ── ENVIAR SOLO PDF (sin limpiar) ─────────────────────────────────────────────
 header('Content-Type: application/pdf');
-header('Content-Disposition: attachment; filename="' . $filename . '"');
+header('Content-Disposition: attachment; filename="' . $pdfFilename . '"');
 header('Content-Length: ' . strlen($pdfContent));
 echo $pdfContent;
 exit();

@@ -132,13 +132,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && !empty($_POST["accion"])) {
         $id_bit = $stmt->insert_id;
         $stmt->close();
 
-        // 3.- Preparar carpeta del reporte [id_bit]-[slug]
-        $slug    = iconv("UTF-8", "ASCII//TRANSLIT//IGNORE", $encabezado);
-        $slug    = preg_replace('/[^a-zA-Z0-9]+/', '-', $slug);
-        $slug    = trim($slug, '-');
-        $slug    = substr($slug, 0, 50);
-        $carpeta = "../uploads/evidencias/{$id_bit}-{$slug}/";
-        $rutaWeb = "uploads/evidencias/{$id_bit}-{$slug}/";
+        // 3.- Preparar carpeta: evidencias/{YYYY-MM-DD}/{DD-MM-YYYY - NNN}/
+        $fechaDia  = date('Y-m-d');                          // sub-carpeta por día (ISO para orden)
+        $tituloDir = str_replace('/', '-', $encabezado);    // "22-05-2026 - 001"
+        $carpeta   = "../uploads/evidencias/{$fechaDia}/{$tituloDir}/";
+        $rutaWeb   = "uploads/evidencias/{$fechaDia}/{$tituloDir}/";
         if (!is_dir($carpeta)) mkdir($carpeta, 0755, true);
 
         // 4.- Mover imágenes a la carpeta

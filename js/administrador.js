@@ -99,43 +99,54 @@ function deleteUser(id, nombre) {
     var inputBuscar  = document.getElementById("buscar-bitacora");
     var selectEstado = document.getElementById("filtro-estado-bitacora");
     var selectArea   = document.getElementById("filtro-area-bitacora");
+    var selectTipo   = document.getElementById("filtro-tipo-bitacora");
 
-    if (!inputBuscar || !selectEstado || !selectArea) return;
+    if (!inputBuscar || !selectEstado || !selectArea || !selectTipo) return;
 
     function filtrar() {
         var texto  = inputBuscar.value.toLowerCase().trim();
         var estado = selectEstado.value;
         var area   = selectArea.value;
+        var tipo   = selectTipo.value;
         var hayResultados = false;
+        var hayFilasDatos = false;
 
         document.querySelectorAll("#tabla-bitacora tr").forEach(function (fila) {
             if (fila.querySelector("td[colspan]")) return;
 
+            hayFilasDatos = true;
             var textoDato  = (fila.dataset.texto  || "");
             var estadoDato = (fila.dataset.estado || "");
             var areaDato   = (fila.dataset.area   || "");
+            var tipoDato   = (fila.dataset.tipo   || "");
 
             var ok = (!texto  || textoDato.includes(texto))
                   && (!estado || estadoDato === estado)
-                  && (!area   || areaDato   === area);
+                  && (!area   || areaDato   === area)
+                  && (!tipo   || tipoDato   === tipo);
 
             fila.style.display = ok ? "" : "none";
             if (ok) hayResultados = true;
         });
 
         var sinResultados = document.getElementById("bitacora-sin-resultados");
-        if (!sinResultados) {
-            sinResultados = document.createElement("tr");
-            sinResultados.id = "bitacora-sin-resultados";
-            sinResultados.innerHTML = '<td colspan="6" style="text-align:center;color:#8f98b2;">Sin resultados para los filtros aplicados.</td>';
-            document.getElementById("tabla-bitacora").appendChild(sinResultados);
+        if (hayFilasDatos) {
+            if (!sinResultados) {
+                sinResultados = document.createElement("tr");
+                sinResultados.id = "bitacora-sin-resultados";
+                sinResultados.innerHTML = '<td colspan="7" style="text-align:center;color:#8f98b2;">Sin resultados para los filtros aplicados.</td>';
+                document.getElementById("tabla-bitacora").appendChild(sinResultados);
+            }
+            sinResultados.style.display = hayResultados ? "none" : "";
+        } else if (sinResultados) {
+            sinResultados.style.display = "none";
         }
-        sinResultados.style.display = hayResultados ? "none" : "";
     }
 
     inputBuscar.addEventListener("input", filtrar);
     selectEstado.addEventListener("change", filtrar);
     selectArea.addEventListener("change", filtrar);
+    selectTipo.addEventListener("change", filtrar);
 })();
 
 // Filtrado de tabla de usuarios para la barra de búsqueda, después se pasará a comun.js
@@ -171,24 +182,42 @@ function deleteUser(id, nombre) {
 
 // ── Generar Reporte de Período ────────────────────────────────────────────────
 (function () {
-    var inicio = document.getElementById('rp-fecha-inicio');
-    var fin    = document.getElementById('rp-fecha-fin');
-    var btn    = document.getElementById('btn-generar-reporte');
-    var aviso  = document.getElementById('rp-aviso');
+    var inicio        = document.getElementById('rp-fecha-inicio');
+    var fin           = document.getElementById('rp-fecha-fin');
+    var btn           = document.getElementById('btn-generar-reporte');
+    var chkLimpiar    = document.getElementById('rp-limpiar');
+    var labelLimpiar  = document.getElementById('rp-limpiar-label');
+    var avisoBorrado  = document.getElementById('rp-aviso-borrado');
 
-    if (!inicio || !fin || !btn) return;
+    if (!inicio || !fin || !btn || !chkLimpiar) return;
 
     function actualizar() {
-        var ok = inicio.value.trim() !== '' && fin.value.trim() !== '';
-        btn.disabled = !ok;
-        if (aviso) aviso.style.display = ok ? '' : 'none';
+        var fechasOk = inicio.value.trim() !== '' && fin.value.trim() !== '';
+        btn.disabled = !fechasOk;
+
+        var limpiar = chkLimpiar.checked;
+        avisoBorrado.style.display  = limpiar ? '' : 'none';
+        labelLimpiar.style.borderColor  = limpiar ? '#e53e3e' : '#e2e8f0';
+        labelLimpiar.style.background   = limpiar ? '#fff5f5' : '#f8fafc';
     }
 
     inicio.addEventListener('change', actualizar);
     fin.addEventListener('change', actualizar);
+    chkLimpiar.addEventListener('change', actualizar);
 })();
 
 function confirmarGenerarReporte() {
+    var limpiar = document.getElementById('rp-limpiar').checked;
+    var texto   = document.getElementById('modal-reporte-texto');
+    var btnCont = document.getElementById('btn-modal-continuar');
+    if (texto) {
+        texto.innerHTML = limpiar
+            ? 'Al generar el reporte, <strong>todos los registros de la base de datos serán eliminados</strong> y los archivos de evidencia borrados del servidor. Esta acción no se puede deshacer.<br><br>¿Desea continuar?'
+            : '¿Desea generar el reporte PDF del período seleccionado?';
+    }
+    if (btnCont) {
+        btnCont.className = limpiar ? 'btn btn-peligro' : 'btn btn-primario';
+    }
     document.getElementById('modalConfirmarReporte').classList.add('abierto');
 }
 

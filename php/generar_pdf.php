@@ -69,7 +69,7 @@ function generarReportePDF(array $datos, string $carpeta): void {
     // ── TÍTULO DEL DOCUMENTO ──────────────────────────────────────────────────
     $pdf->SetY($dividerY + 4);
     $pdf->SetFont('Arial', 'B', 16);
-    $pdf->Cell(0, 10, $enc('Reporte de Soporte Técnico'), 0, 1, 'C');
+    $pdf->Cell(0, 10, $enc('Reporte de Solicitud'), 0, 1, 'C');
 
     // ── METADATOS ─────────────────────────────────────────────────────────────
     $pdf->SetFont('Arial', '', 9);

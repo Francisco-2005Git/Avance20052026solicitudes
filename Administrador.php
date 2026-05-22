@@ -34,7 +34,7 @@ $stmtBitacora = $conexion->prepare(
         ar.nombre AS area, ar.id_area,
         CONCAT(us.nombre, ' ', us.app) AS solicitante,
         IFNULL(CONCAT(uw.nombre, ' ', uw.app), '—') AS trabajador,
-        b.id_bit, b.evidencia
+        b.id_bit, b.evidencia, b.tipo_accion
      FROM solicitud s
      JOIN estado_solicitud e ON s.id_estado = e.id_estado
      JOIN area ar ON s.id_area = ar.id_area
@@ -193,6 +193,12 @@ $listaCategorias = $qCatLista->fetch_all(MYSQLI_ASSOC);
                                 </option>
                             <?php endforeach; ?>
                         </select>
+                        <select class="campo-form" id="filtro-tipo-bitacora" style="width:auto; min-width:170px;">
+                            <option value="">Todos los tipos</option>
+                            <option value="Correctiva">Correctiva</option>
+                            <option value="Preventiva">Preventiva</option>
+                            <option value="Soporte Técnico">Soporte Técnico</option>
+                        </select>
                     </div>
                     <div class="contenedor-tabla">
                         <table>
@@ -202,6 +208,7 @@ $listaCategorias = $qCatLista->fetch_all(MYSQLI_ASSOC);
                                     <th>Solicitante</th>
                                     <th>Técnico</th>
                                     <th>Estado / Prioridad</th>
+                                    <th>Tipo de Acción</th>
                                     <th>Fecha</th>
                                     <th>Reporte</th>
                                 </tr>
@@ -209,7 +216,7 @@ $listaCategorias = $qCatLista->fetch_all(MYSQLI_ASSOC);
                             <tbody id="tabla-bitacora">
                             <?php if (empty($registrosBitacora)): ?>
                                 <tr>
-                                    <td colspan="6" style="text-align:center; color:#8f98b2;">
+                                    <td colspan="7" style="text-align:center; color:#8f98b2;">
                                         No hay solicitudes registradas.
                                     </td>
                                 </tr>
@@ -240,9 +247,12 @@ $listaCategorias = $qCatLista->fetch_all(MYSQLI_ASSOC);
                                         $r['trabajador']     . ' ' .
                                         $r['area']
                                     );
+                                    $tipoAccion = $r['tipo_accion'] ?? null;
+                                    $tipoLabel  = $tipoAccion ?? 'Sin Asignar';
                                 ?>
                                 <tr data-estado="<?= htmlspecialchars($r['estado']) ?>"
                                     data-area="<?= $r['id_area'] ?>"
+                                    data-tipo="<?= htmlspecialchars($tipoLabel) ?>"
                                     data-texto="<?= htmlspecialchars($textoBusqueda) ?>">
                                     <td>
                                         <div style="font-weight:600; color:#1a2340;">
@@ -262,6 +272,15 @@ $listaCategorias = $qCatLista->fetch_all(MYSQLI_ASSOC);
                                             <span class="etiqueta <?= $clasePrioridad ?>" style="margin-top:4px; display:inline-block;">
                                                 <?= htmlspecialchars($r['prioridad']) ?>
                                             </span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="texto-apagado" style="white-space:nowrap;">
+                                        <?php if ($tipoAccion): ?>
+                                            <span class="etiqueta" style="background:#e8f4fd; color:#1a6fa3; border-color:#b3d7f0;">
+                                                <?= htmlspecialchars($tipoAccion) ?>
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="texto-apagado">Sin Asignar</span>
                                         <?php endif; ?>
                                     </td>
                                     <td class="texto-apagado" style="white-space:nowrap;">
@@ -291,16 +310,6 @@ $listaCategorias = $qCatLista->fetch_all(MYSQLI_ASSOC);
                         <div class="tarjeta-titulo">Generar Reporte de Período</div>
                     </div>
                     <div class="tarjeta-cuerpo">
-                        <div style="background:#fdecea; border:1px solid #f5c2c2; border-radius:8px; padding:14px 16px; margin-bottom:20px;">
-                            <p style="font-size:13px; color:#7a2020; line-height:1.6; margin:0; text-align:justify;">
-                                <strong>⚠ Acción irreversible.</strong> Al generar el reporte, se descargará un PDF con
-                                el resumen estadístico y el listado completo de solicitudes del período.
-                                Inmediatamente después, <strong>todos los registros de solicitudes, asignaciones y bitácora
-                                serán eliminados</strong>, junto con los archivos de evidencia subidos al servidor.
-                                Actualiza la página tras la descarga para ver la bitácora limpia.
-                            </p>
-                        </div>
-
                         <form id="form-reporte-periodo"
                               action="php/generar_reporte_admin.php"
                               method="POST"
@@ -316,9 +325,29 @@ $listaCategorias = $qCatLista->fetch_all(MYSQLI_ASSOC);
                                 </div>
                             </div>
 
-                            <p id="rp-aviso" style="font-size:12px; color:#8f98b2; margin-bottom:14px; display:none;">
-                                Ambas fechas seleccionadas. Presiona el botón para continuar.
-                            </p>
+                            <label id="rp-limpiar-label" for="rp-limpiar"
+                                   style="display:flex; align-items:flex-start; gap:12px; padding:14px 16px;
+                                          border-radius:8px; border:2px solid #e2e8f0; cursor:pointer;
+                                          margin-bottom:16px; background:#f8fafc; transition:border-color .2s, background .2s;">
+                                <input type="checkbox" id="rp-limpiar" name="limpiar_bd" value="1"
+                                       style="margin-top:2px; width:16px; height:16px; flex-shrink:0; accent-color:#c0392b;">
+                                <span>
+                                    <strong style="font-size:13px;">Limpiar base de datos al generar</strong><br>
+                                    <span style="font-size:12px; color:#6b7280; line-height:1.5;">
+                                        Elimina todos los registros de solicitudes, asignaciones y bitácora,
+                                        así como los archivos de evidencia del servidor.
+                                    </span>
+                                </span>
+                            </label>
+
+                            <div id="rp-aviso-borrado"
+                                 style="background:#fdecea; border:1px solid #f5c2c2; border-radius:8px;
+                                        padding:12px 16px; margin-bottom:16px; display:none;">
+                                <p style="font-size:13px; color:#7a2020; line-height:1.6; margin:0;">
+                                    <strong>⚠ Acción irreversible.</strong> Los registros serán eliminados
+                                    inmediatamente después de generar el PDF. Actualiza la página tras la descarga.
+                                </p>
+                            </div>
 
                             <button type="button" id="btn-generar-reporte"
                                     class="btn btn-primario" disabled
@@ -588,16 +617,12 @@ $listaCategorias = $qCatLista->fetch_all(MYSQLI_ASSOC);
             </div>
             <div class="modal-divisor"></div>
             <div style="padding:20px 24px 8px;">
-                <p style="color:#4a5568; line-height:1.6; font-size:14px; margin:0 0 10px;">
-                    Al generar el reporte del período, <strong>los registros de la base de datos serán reiniciados</strong>.
-                    Esta acción no se puede deshacer.
-                </p>
-                <p style="color:#4a5568; line-height:1.6; font-size:14px; margin:0;">
-                    ¿Deseas continuar y generar el reporte PDF?
+                <p id="modal-reporte-texto" style="color:#4a5568; line-height:1.6; font-size:14px; margin:0;">
+                    ¿Deseas generar el reporte PDF del período seleccionado?
                 </p>
             </div>
             <div class="modal-pie">
-                <button type="button" class="btn btn-peligro" onclick="ejecutarGenerarReporte()">Continuar</button>
+                <button type="button" id="btn-modal-continuar" class="btn btn-primario" onclick="ejecutarGenerarReporte()">Continuar</button>
                 <button type="button" class="btn btn-fantasma" onclick="cerrarModalReporte()">Cancelar</button>
             </div>
         </div>
