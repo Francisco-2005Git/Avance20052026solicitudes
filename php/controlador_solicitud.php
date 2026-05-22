@@ -60,7 +60,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $stmtAsg->execute();
         $stmtAsg->close();
 
-        $_SESSION["exito"] = "Solicitud aprobada y finalizada.";
+        $_SESSION["exito"]          = "Solicitud aprobada y finalizada.";
+        $_SESSION["seccion_activa"] = "creadas";
         header("Location: ../Solicitante.php");
         exit();
     }
@@ -134,7 +135,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         correoReporteRechazado($conexion, $id_sol, $razon);
         notifReporteRechazado($conexion, $id_sol, $razon);
 
-        $_SESSION["exito"] = "Reporte rechazado. El trabajador deberá enviar uno nuevo.";
+        $_SESSION["exito"]          = "Reporte rechazado. El trabajador deberá enviar uno nuevo.";
+        $_SESSION["seccion_activa"] = "creadas";
         header("Location: ../Solicitante.php");
         exit();
     }

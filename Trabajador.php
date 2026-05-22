@@ -76,6 +76,12 @@ $notificaciones = $stmtNotifs->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmtNotifs->close();
 $totalNotifs = count($notificaciones);
 
+// Título auto-generado para el formulario de reporte
+date_default_timezone_set('America/Mexico_City');
+$hoy           = date('Y-m-d');
+$sigRow        = $conexion->query("SELECT COUNT(*) + 1 AS sig FROM bitacora WHERE DATE(fecha_registro) = '$hoy'")->fetch_object();
+$tituloReporte = date('d/m/Y') . ' - ' . str_pad((int)$sigRow->sig, 3, '0', STR_PAD_LEFT);
+
 // Estado inicial para polling
 $initSolMaxRow = $conexion->query("SELECT COALESCE(MAX(id_sol), 0) AS mx FROM solicitud WHERE id_estado = 1")->fetch_object();
 $initSolMaxId  = (int)$initSolMaxRow->mx;
@@ -307,11 +313,21 @@ $initNotifMaxId = !empty($notificaciones) ? (int)max(array_column($notificacione
                                 </div>
 
                                 <div class="grupo-form">
-                                    <label class="etiqueta-form" for="titulo-reporte">Título del reporte <small class="contador-chars"></small></label>
+                                    <label class="etiqueta-form" for="titulo-reporte">Título del reporte</label>
                                     <input class="campo-form" type="text" id="titulo-reporte"
-                                        name="encabezado" placeholder="Ingresa el título de tu reporte"
-                                        maxlength="50" required
-                                        value="<?= htmlspecialchars($old['encabezado'] ?? '') ?>">
+                                        name="encabezado" readonly tabindex="-1"
+                                        value="<?= htmlspecialchars($tituloReporte) ?>"
+                                        style="background:#f4f6fa; color:#6b7590; cursor:default; user-select:none; pointer-events:none;">
+                                </div>
+
+                                <div class="grupo-form">
+                                    <label class="etiqueta-form" for="tipo-accion">Tipo de acción</label>
+                                    <select class="campo-form" id="tipo-accion" name="tipo_accion" required>
+                                        <option value="" disabled <?= empty($old['tipo_accion']) ? 'selected' : '' ?>>— Seleccionar —</option>
+                                        <option value="Correctiva"      <?= ($old['tipo_accion'] ?? '') === 'Correctiva'      ? 'selected' : '' ?>>Correctiva</option>
+                                        <option value="Preventiva"      <?= ($old['tipo_accion'] ?? '') === 'Preventiva'      ? 'selected' : '' ?>>Preventiva</option>
+                                        <option value="Soporte Técnico" <?= ($old['tipo_accion'] ?? '') === 'Soporte Técnico' ? 'selected' : '' ?>>Soporte Técnico</option>
+                                    </select>
                                 </div>
 
                                 <div class="grupo-form">

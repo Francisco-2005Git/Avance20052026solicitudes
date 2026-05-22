@@ -107,6 +107,7 @@
                         }
                         if (data.asg_fingerprint !== estado.asgFp) {
                             estado.asgFp = data.asg_fingerprint;
+                            actualizarContadorNav('mis-asignaciones', data.asg_activas);
                             refrescarSeccion('asignaciones-contenido', 'php/partial_asignaciones.php');
                         }
                     }
@@ -115,6 +116,7 @@
                         if (data.sol_fingerprint !== estado.solFp) {
                             estado.solFp    = data.sol_fingerprint;
                             estado.solCount = data.sol_count;
+                            actualizarContadorNav('creadas', data.sol_activas);
                             refrescarSeccion('mis-sol-contenido', 'php/partial_mis_solicitudes.php');
                         }
                     }

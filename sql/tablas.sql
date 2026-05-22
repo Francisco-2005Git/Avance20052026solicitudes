@@ -9,19 +9,23 @@ create table rol(
 );
 
 -- Tabla para agrupar las áreas por categoría
-create table categoria(
+-- ¡¡¡¡¡¡¡¡¡¡ NUEVO !!!!!!!!!!
+create table categoriaArea(
     id_categoria int auto_increment,
     nombre varchar(50) not null unique,
     primary key(id_categoria)
 );
+-- ¡¡¡¡¡¡¡¡¡¡ NUEVO !!!!!!!!!!
 
 -- Tabla para definir y almacenar las areas de la institucion
 create table area(
     id_area      int auto_increment,
     nombre       varchar(50) not null unique,
+-- ¡¡¡¡¡¡¡¡¡¡ NUEVO !!!!!!!!!!
     id_categoria int not null,
+-- ¡¡¡¡¡¡¡¡¡¡ NUEVO !!!!!!!!!!
     primary key(id_area),
-    foreign key(id_categoria) references categoria(id_categoria)
+    foreign key(id_categoria) references categoriaArea(id_categoria)
 );
 
 -- Tabla que almacena los datos del usuario y, si corresponde, su rol y estado como trabajador.
@@ -96,12 +100,15 @@ create table bitacora(
     id_sol int not null,
     id_us int not null,
     encabezado varchar(50) not null,
-    descripcion_problema text not null, # INDICE TEXTO COMPLETO
-    descripcion_solucion text not null, -- SEPARADOS, [NUEVO]
+    descripcion_problema text not null,
+    descripcion_solucion text not null,
+-- ¡¡¡¡¡¡¡¡¡¡ NUEVO !!!!!!!!!!
+    tipo_accion enum('Correctiva','Preventiva','Soporte Técnico') not null,
+-- ¡¡¡¡¡¡¡¡¡¡ NUEVO !!!!!!!!!!
     evidencia text,
     fecha_registro datetime default current_timestamp, # INDICE ORDINARIO
     aprobado boolean default false,
-    razon_rechazo text null, -- [NUEVO]
+    razon_rechazo text null,
     primary key(id_bit),
     foreign key(id_sol) references solicitud(id_sol)
         on delete cascade,

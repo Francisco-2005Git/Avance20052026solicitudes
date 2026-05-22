@@ -60,7 +60,7 @@ $estadosFiltro = $stmtEstados->fetch_all(MYSQLI_ASSOC);
 $qAreasCat = $conexion->query(
     "SELECT c.id_categoria, c.nombre AS cat_nombre,
             a.id_area, a.nombre AS area_nombre
-     FROM categoria c
+     FROM categoriaArea c
      LEFT JOIN area a ON a.id_categoria = c.id_categoria
      ORDER BY c.nombre ASC, a.nombre ASC"
 );
@@ -76,7 +76,7 @@ while ($row = $qAreasCat->fetch_object()) {
         ];
     }
 }
-$qCatLista      = $conexion->query("SELECT id_categoria, nombre FROM categoria ORDER BY nombre ASC");
+$qCatLista      = $conexion->query("SELECT id_categoria, nombre FROM categoriaArea ORDER BY nombre ASC");
 $listaCategorias = $qCatLista->fetch_all(MYSQLI_ASSOC);
 ?>
 

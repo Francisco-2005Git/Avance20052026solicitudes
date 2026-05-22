@@ -22,17 +22,31 @@ if (empty($fechaInicio) || empty($fechaFin)) {
 $totalRow = $conexion->query("SELECT COUNT(*) AS n FROM solicitud")->fetch_object();
 $total    = (int)($totalRow->n ?? 0);
 
+// Contadores por tipo de acción
+$contTipos = ['Correctiva' => 0, 'Preventiva' => 0, 'Soporte Técnico' => 0];
+$rTipos = $conexion->query(
+    "SELECT tipo_accion, COUNT(*) AS n FROM bitacora
+     WHERE tipo_accion IS NOT NULL GROUP BY tipo_accion"
+);
+while ($rt = $rTipos->fetch_object()) {
+    if (isset($contTipos[$rt->tipo_accion])) $contTipos[$rt->tipo_accion] = (int)$rt->n;
+}
+
 $solicitudes = $conexion->query(
     "SELECT s.id_sol,
             a.nombre  AS area,
             IFNULL(CONCAT(uw.nombre,' ',uw.app), '—') AS trabajador,
             s.encabezado,
-            DATE_FORMAT(s.fecha_creacion,'%d/%m/%Y') AS fecha
+            DATE_FORMAT(s.fecha_creacion,'%d/%m/%Y') AS fecha,
+            b.tipo_accion
      FROM solicitud s
      JOIN area a ON a.id_area = s.id_area
      LEFT JOIN asignacion asig ON asig.id_sol = s.id_sol
          AND asig.estado_asignacion IN ('activa','completada')
      LEFT JOIN usuario uw ON uw.id_us = asig.id_trabajador
+     LEFT JOIN bitacora b ON b.id_bit = (
+         SELECT MAX(id_bit) FROM bitacora WHERE id_sol = s.id_sol AND aprobado = TRUE
+     )
      ORDER BY s.fecha_creacion ASC"
 )->fetch_all(MYSQLI_ASSOC);
 
@@ -114,14 +128,20 @@ $pdf->SetFont('Arial', '', 9);
 $pdf->SetTextColor(90, 90, 90);
 $pdf->Cell(0, 5, $enc("Período: $fechaInicioFmt  —  $fechaFinFmt"), 0, 1);
 $pdf->Cell(0, 5, $enc("Total de solicitudes registradas: $total"), 0, 1);
+$pdf->SetFont('Arial', '', 8.5);
+$pdf->Cell(0, 5, $enc(
+    "Correctivas: {$contTipos['Correctiva']}    |    " .
+    "Preventivas: {$contTipos['Preventiva']}    |    " .
+    "Soporte Técnico: {$contTipos['Soporte Técnico']}"
+), 0, 1);
 $pdf->Ln(6);
 
 // ── TABLA DE SOLICITUDES ──────────────────────────────────────────────────────
 // Anchos: total 185.9 mm
-// #(10) | Área(36) | Técnico(40) | Nombre Solicitud(55) | Fecha(20) | Firma(24.9)
-$cW = [10, 36, 40, 55, 20, 24.9];
-$cH = ['#', $enc('Área'), $enc('Técnico'), $enc('Nombre de la Solicitud'), 'Fecha', 'Firma'];
-$cA = ['C', 'C', 'C', 'C', 'C', 'C'];
+// #(10) | Área(28) | Técnico(35) | Solicitud(40) | Tipo(28) | Fecha(18) | Firma(26.9)
+$cW = [10, 28, 35, 40, 28, 18, 26.9];
+$cH = ['#', $enc('Área'), $enc('Técnico'), $enc('Solicitud'), $enc('Tipo de Acción'), 'Fecha', 'Firma'];
+$cA = ['C', 'C', 'C', 'C', 'C', 'C', 'C'];
 
 $pdf->SetFont('Arial', 'B', 9);
 $pdf->SetFillColor(27, 85, 45);
@@ -152,6 +172,7 @@ if (empty($solicitudes)) {
             $r['area'],
             $r['trabajador'],
             $r['encabezado'],
+            $r['tipo_accion'] ?? '—',
             $r['fecha'],
             '',
         ];

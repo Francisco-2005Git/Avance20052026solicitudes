@@ -6,10 +6,11 @@ if (empty($_SESSION["id"]) || !is_numeric($_SESSION["id"]) || $_SESSION["id_rol"
 }
 
 // Mensajes flash
-$msgExito = $_SESSION["exito"] ?? null;
-$msgError = $_SESSION["error"] ?? null;
-$old      = $_SESSION["old"]   ?? [];
-unset($_SESSION["exito"], $_SESSION["error"], $_SESSION["old"]);
+$msgExito      = $_SESSION["exito"]          ?? null;
+$msgError      = $_SESSION["error"]          ?? null;
+$seccionActiva = $_SESSION["seccion_activa"] ?? null;
+$old           = $_SESSION["old"]            ?? [];
+unset($_SESSION["exito"], $_SESSION["error"], $_SESSION["seccion_activa"], $_SESSION["old"]);
 
 require_once "php/conexion.php";
 
@@ -497,6 +498,9 @@ $initNotifMaxId = !empty($notificaciones) ? (int)max(array_column($notificacione
         });
         <?php if (!empty($old['id_area'])): ?>
         document.getElementById('area').value = '<?= (int)$old['id_area'] ?>';
+        <?php endif; ?>
+        <?php if ($seccionActiva): ?>
+        navegarSeccion('<?= htmlspecialchars($seccionActiva) ?>', titulosPagina);
         <?php endif; ?>
     </script>
     <script>

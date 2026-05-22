@@ -75,33 +75,40 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && !empty($_POST["accion"])) {
 
     if ($_POST["accion"] === "reporte") {
         $id_sol               = (int)($_POST["id_sol"]               ?? 0);
-        $encabezado           = trim($_POST["encabezado"]            ?? "");
         $descripcion_problema = trim($_POST["descripcion_problema"]  ?? "");
         $descripcion_solucion = trim($_POST["descripcion_solucion"]  ?? "");
+        $tipo_accion          = trim($_POST["tipo_accion"]           ?? "");
         $id_us                = $_SESSION["id"];
 
+        // Título auto-generado: DD/MM/YYYY - NNN (N.º de reporte del día)
+        $hoy = date('Y-m-d');
+        $sigRow     = $conexion->query(
+            "SELECT COUNT(*) + 1 AS sig FROM bitacora WHERE DATE(fecha_registro) = '$hoy'"
+        )->fetch_object();
+        $encabezado = date('d/m/Y') . ' - ' . str_pad((int)$sigRow->sig, 3, '0', STR_PAD_LEFT);
+
         // 1.- Validaciones
-        $errores     = [];
+        $errores      = [];
         $fotosSubidas = array_filter($_FILES["fotos"]["name"] ?? [], fn($n) => $n !== "");
 
-        if ($id_sol < 1)                           $errores[] = "Debes seleccionar una solicitud.";
-        if (empty($encabezado))                    $errores[] = "El título es obligatorio.";
-        elseif (strlen($encabezado) > 50)          $errores[] = "El título no puede exceder 50 caracteres.";
-        if (strlen($descripcion_problema) <= 10)   $errores[] = "La descripción del problema debe tener más de 10 caracteres.";
+        if ($id_sol < 1)  $errores[] = "Debes seleccionar una solicitud.";
+        if (!in_array($tipo_accion, ['Correctiva', 'Preventiva', 'Soporte Técnico']))
+                          $errores[] = "Selecciona un tipo de acción válido.";
+        if (strlen($descripcion_problema) <= 10)    $errores[] = "La descripción del problema debe tener más de 10 caracteres.";
         elseif (strlen($descripcion_problema) > 120) $errores[] = "La descripción del problema no puede exceder 120 caracteres.";
-        if (strlen($descripcion_solucion) <= 10)   $errores[] = "La descripción de la solución debe tener más de 10 caracteres.";
+        if (strlen($descripcion_solucion) <= 10)    $errores[] = "La descripción de la solución debe tener más de 10 caracteres.";
         elseif (strlen($descripcion_solucion) > 120) $errores[] = "La descripción de la solución no puede exceder 120 caracteres.";
-        if (count($fotosSubidas) === 0)            $errores[] = "Debes subir al menos 1 fotografía como evidencia.";
-        if (count($fotosSubidas) > 3)              $errores[] = "Solo se permiten hasta 3 fotografías.";
+        if (count($fotosSubidas) === 0)             $errores[] = "Debes subir al menos 1 fotografía como evidencia.";
+        if (count($fotosSubidas) > 3)               $errores[] = "Solo se permiten hasta 3 fotografías.";
 
         if (!empty($errores)) {
             $_SESSION["error"]          = implode(" | ", $errores);
             $_SESSION["seccion_activa"] = "reporte";
             $_SESSION["old"]            = [
-                'id_sol'               => $_POST["id_sol"]               ?? '',
-                'encabezado'           => $encabezado,
+                'id_sol'               => $_POST["id_sol"] ?? '',
                 'descripcion_problema' => $descripcion_problema,
                 'descripcion_solucion' => $descripcion_solucion,
+                'tipo_accion'          => $tipo_accion,
             ];
             header("Location: ../Trabajador.php");
             exit();
@@ -109,10 +116,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && !empty($_POST["accion"])) {
 
         // 2.- Insertar en bitacora sin evidencia para obtener id_bit
         $stmt = $conexion->prepare(
-            "INSERT INTO bitacora (id_sol, id_us, encabezado, descripcion_problema, descripcion_solucion)
-             VALUES (?, ?, ?, ?, ?)"
+            "INSERT INTO bitacora (id_sol, id_us, encabezado, descripcion_problema, descripcion_solucion, tipo_accion)
+             VALUES (?, ?, ?, ?, ?, ?)"
         );
-        $stmt->bind_param("iisss", $id_sol, $id_us, $encabezado, $descripcion_problema, $descripcion_solucion);
+        $stmt->bind_param("iissss", $id_sol, $id_us, $encabezado, $descripcion_problema, $descripcion_solucion, $tipo_accion);
 
         if (!$stmt->execute()) {
             $errorMsg = $stmt->error;

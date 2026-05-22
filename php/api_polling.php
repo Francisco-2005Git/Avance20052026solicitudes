@@ -48,22 +48,26 @@ if ($rol === 2) { // Trabajador
         "SELECT GROUP_CONCAT(
              CONCAT(a.id_asg,':',a.estado_asignacion,':',s.id_estado)
              ORDER BY a.id_asg
-         ) AS fp
+         ) AS fp,
+         SUM(a.estado_asignacion = 'activa') AS cnt_activas
          FROM asignacion a
          JOIN solicitud s ON s.id_sol = a.id_sol
          WHERE a.id_trabajador = $id AND a.estado_asignacion != 'cancelada'"
     )->fetch_object();
     $resp['asg_fingerprint'] = md5($row2->fp ?? '');
+    $resp['asg_activas']     = (int)($row2->cnt_activas ?? 0);
 }
 
 if ($rol === 1) { // Solicitante
     $row = $conexion->query(
         "SELECT GROUP_CONCAT(CONCAT(id_sol,':',id_estado) ORDER BY id_sol) AS fp,
-                COUNT(*) AS cnt
+                COUNT(*) AS cnt,
+                SUM(id_estado != 3) AS cnt_activas
          FROM solicitud WHERE id_us = $id"
     )->fetch_object();
     $resp['sol_fingerprint'] = md5($row->fp ?? '');
     $resp['sol_count']       = (int)$row->cnt;
+    $resp['sol_activas']     = (int)($row->cnt_activas ?? 0);
 }
 
 echo json_encode($resp);
